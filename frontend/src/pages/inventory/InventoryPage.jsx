@@ -27,9 +27,13 @@ export default function InventoryPage() {
     setLoading(true)
     setData([]) // Clear data to avoid rendering mismatch
     try {
-      if (tab === 'stock' || tab === 'restock') {
+      if (tab === 'stock') {
         const { data } = await api.get('/inventory/stock')
         setData(data)
+      } else if (tab === 'restock') {
+        const { data } = await api.get('/inventory/stock')
+        const restockOnly = data.filter(p => (p.totalStock ?? 0) <= (p.minStockLevel ?? 0))
+        setData(restockOnly)
       } else if (tab === 'expired') {
         if (expiryFilter === 'stock') {
           // For out of stock, we look at items with 0 stock
@@ -354,21 +358,21 @@ export default function InventoryPage() {
                           onChange={() => handleRestockToggle(item.id)} 
                         />
                       </td>
-                      <td>
+                      <td className="cursor-pointer" onClick={() => handleRestockToggle(item.id)}>
                         <div className="font-medium text-[#e2e8f0]">{item?.name}</div>
                         <div className="text-[10px] text-[#94a3b8]">{item?.category?.name}</div>
                       </td>
-                      <td className="text-xs font-mono">
+                      <td className="text-xs font-mono cursor-pointer" onClick={() => handleRestockToggle(item.id)}>
                         {item?.batches?.[0]?.batchNumber || <span className="text-[#475569]">N/A</span>}
                       </td>
-                      <td className="text-xs">
+                      <td className="text-xs cursor-pointer" onClick={() => handleRestockToggle(item.id)}>
                         {item?.batches?.[0]?.expiryDate ? (
                           <span className={clsx(new Date(item.batches[0].expiryDate) < new Date() ? 'text-red-400' : 'text-[#94a3b8]')}>
                             {format(new Date(item.batches[0].expiryDate), 'MMM yyyy')}
                           </span>
                         ) : '—'}
                       </td>
-                      <td className={clsx('font-bold', item.totalStock <= item.minStockLevel ? 'text-red-400' : 'text-white')}>
+                      <td className={clsx('font-bold cursor-pointer', item.totalStock <= item.minStockLevel ? 'text-red-400' : 'text-white')} onClick={() => handleRestockToggle(item.id)}>
                         {item.totalStock} {item.unit}s
                       </td>
                       <td>
@@ -426,8 +430,8 @@ export default function InventoryPage() {
                       <td>
                         <button 
                           onClick={() => setModal({ 
-                            productId: item?.productId || item?.id, 
-                            batchId: item?.id && !item?.name ? item.id : '', // Only set batchId if it's a batch object
+                            productId: item?.productId || item?.product?.id || item?.id, 
+                            batchId: (item?.productId || item?.product?.id) ? item.id : '', // It's a batch if it has a productId parent
                             type: item?.expiryDate && new Date(item?.expiryDate) < new Date() ? 'EXPIRED' : 'CORRECTION' 
                           })} 
                           className="btn-ghost btn-icon text-brand-400" 
