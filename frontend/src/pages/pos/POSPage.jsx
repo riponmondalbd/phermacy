@@ -244,7 +244,7 @@ export default function POSPage() {
         customerName: !customer?.id && customerSearch ? customerSearch : null,
         discount,
         paymentMethod,
-        paidAmount: paymentMethod === 'due' ? 0 : (paidAmount || total),
+        paidAmount: paidAmount || (paymentMethod === 'due' ? 0 : total),
         items: cartItems.map(i => ({
           productId: i.productId,
           batchId: i.batchId,
@@ -400,16 +400,19 @@ export default function POSPage() {
               <option value="due">Due</option>
             </select>
           </div>
-          {paymentMethod !== 'due' && (
-            <div>
-              <label className="label">Amount Paid</label>
-              <input type="number" value={paidAmount || ''} placeholder={total.toFixed(2)}
-                onChange={e => setPaidAmount(e.target.value)} className="input-sm" />
-            </div>
-          )}
+          <div>
+            <label className="label">Amount Paid</label>
+            <input 
+              type="number" 
+              value={paidAmount || ''} 
+              placeholder={total.toFixed(2)}
+              onChange={e => setPaidAmount(e.target.value)} 
+              className="input-sm" 
+            />
+          </div>
           {due > 0 && (
-            <div className="flex justify-between text-xs text-yellow-400">
-              <span>Due</span><span>{cur}{due.toFixed(2)}</span>
+            <div className="flex justify-between text-xs text-red-400 font-bold p-2 bg-red-500/5 border border-red-500/10 rounded-lg">
+              <span>Remaining Due</span><span>{cur}{due.toFixed(2)}</span>
             </div>
           )}
           <button

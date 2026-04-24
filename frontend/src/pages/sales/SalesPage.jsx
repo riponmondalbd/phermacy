@@ -3,11 +3,115 @@ import api from '../../api/client'
 import { format } from 'date-fns'
 import { Search, Eye, Filter, Printer, X, ShoppingBag, User, Calendar } from 'lucide-react'
 import { useSettingsStore } from '../../store/settingsStore'
+import jsPDF from 'jspdf'
+import 'jspdf-autotable'
 import clsx from 'clsx'
 
 function SaleDetailsModal({ sale, onClose }) {
   const { settings } = useSettingsStore()
   const cur = settings.currency || '৳'
+
+  const printInvoice = () => {
+    const doc = new jsPDF({ format: 'a4' })
+    const pageW = doc.internal.pageSize.width
+    const curSymbol = settings.currency || '৳'
+    
+    // Header
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(22)
+    doc.setTextColor(31, 152, 112)
+    doc.text(settings.shopName || 'PharmaCare', pageW / 2, 20, { align: 'center' })
+    
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(10)
+    doc.setTextColor(100)
+    doc.text(settings.shopAddress || '', pageW / 2, 26, { align: 'center' })
+    doc.text(`Phone: ${settings.shopPhone || ''}`, pageW / 2, 31, { align: 'center' })
+    
+    // Divider
+    doc.setDrawColor(200)
+    doc.line(14, 38, pageW - 14, 38)
+    
+    // Invoice Info
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(11)
+    doc.setTextColor(40)
+    doc.text('INVOICE', 14, 48)
+    
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(9)
+    doc.text(`Invoice No: ${sale.invoiceNo}`, 14, 54)
+    doc.text(`Date: ${format(new Date(sale.saleDate), 'PPP p')}`, 14, 59)
+    doc.text(`Sold By: ${sale.user?.name}`, 14, 64)
+    
+    // Customer Info
+    const custX = pageW - 14
+    doc.setFont('helvetica', 'bold')
+    doc.text('BILL TO:', custX, 48, { align: 'right' })
+    doc.setFont('helvetica', 'normal')
+    doc.text(sale.customer?.name || 'Walk-in Customer', custX, 54, { align: 'right' })
+    if (sale.customer?.phone) doc.text(sale.customer.phone, custX, 59, { align: 'right' })
+    
+    // Items Table
+    doc.autoTable({
+      startY: 72,
+      head: [['#', 'Item Details', 'Batch', 'Qty', 'Unit Price', 'Total']],
+      body: sale.items.map((item, i) => [
+        i + 1,
+        { content: item.product.name, styles: { fontStyle: 'bold' } },
+        item.batch?.batchNumber || '-',
+        item.quantity,
+        `${curSymbol}${item.unitPrice.toFixed(2)}`,
+        `${curSymbol}${item.totalPrice.toFixed(2)}`
+      ]),
+      styles: { fontSize: 9, cellPadding: 4, textColor: 50 },
+      headStyles: { fillColor: [31, 152, 112], textColor: 255, fontSize: 10, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [245, 245, 245] },
+      margin: { left: 14, right: 14 }
+    })
+    
+    // Totals
+    const finalY = doc.lastAutoTable.finalY + 10
+    const totalX = pageW - 14
+    
+    doc.setFontSize(10)
+    doc.setTextColor(100)
+    doc.text('Subtotal:', totalX - 35, finalY)
+    doc.text(`${curSymbol}${sale.subtotal.toFixed(2)}`, totalX, finalY, { align: 'right' })
+    
+    if (sale.discount > 0) {
+      doc.text('Discount:', totalX - 35, finalY + 6)
+      doc.text(`-${curSymbol}${sale.discount.toFixed(2)}`, totalX, finalY + 6, { align: 'right' })
+    }
+    
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(12)
+    doc.setTextColor(31, 152, 112)
+    doc.text('Grand Total:', totalX - 35, finalY + 14)
+    doc.text(`${curSymbol}${sale.totalAmount.toFixed(2)}`, totalX, finalY + 14, { align: 'right' })
+    
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(10)
+    doc.setTextColor(100)
+    doc.text('Amount Paid:', totalX - 35, finalY + 21)
+    doc.setTextColor(0, 150, 0)
+    doc.text(`${curSymbol}${sale.paidAmount.toFixed(2)}`, totalX, finalY + 21, { align: 'right' })
+    
+    if (sale.dueAmount > 0) {
+      doc.setTextColor(200, 0, 0)
+      doc.text('Due Amount:', totalX - 35, finalY + 27)
+      doc.text(`${curSymbol}${sale.dueAmount.toFixed(2)}`, totalX, finalY + 27, { align: 'right' })
+    }
+    
+    // Footer
+    doc.setFont('helvetica', 'italic')
+    doc.setFontSize(8)
+    doc.setTextColor(150)
+    doc.text(settings.invoiceFooter || 'Thank you for your business!', pageW / 2, finalY + 45, { align: 'center' })
+    doc.text('System generated invoice. No signature required.', pageW / 2, finalY + 50, { align: 'center' })
+    
+    doc.save(`Invoice-${sale.invoiceNo}.pdf`)
+  }
 
   return (
     <div className="modal-overlay">
@@ -110,7 +214,7 @@ function SaleDetailsModal({ sale, onClose }) {
           </div>
         </div>
         <div className="modal-footer">
-          <button className="btn-secondary gap-2"><Printer size={14} /> Print Invoice</button>
+          <button onClick={printInvoice} className="btn-secondary gap-2"><Printer size={14} /> Print Invoice</button>
           <button onClick={onClose} className="btn-primary">Close</button>
         </div>
       </div>
@@ -197,6 +301,114 @@ export default function SalesPage() {
                   <td>
                     <button onClick={() => setSelectedSale(s)} className="btn-ghost btn-icon" title="View Details">
                       <Eye size={14} />
+                    </button>
+                    <button 
+                      onClick={() => {
+                        const { settings } = useSettingsStore.getState();
+                        const doc = new jsPDF({ format: 'a4' });
+                        const pageW = doc.internal.pageSize.width;
+                        const curSymbol = settings.currency || '৳';
+                        
+                        // Header
+                        doc.setFont('helvetica', 'bold');
+                        doc.setFontSize(22);
+                        doc.setTextColor(31, 152, 112);
+                        doc.text(settings.shopName || 'PharmaCare', pageW / 2, 20, { align: 'center' });
+                        
+                        doc.setFont('helvetica', 'normal');
+                        doc.setFontSize(10);
+                        doc.setTextColor(100);
+                        doc.text(settings.shopAddress || '', pageW / 2, 26, { align: 'center' });
+                        doc.text(`Phone: ${settings.shopPhone || ''}`, pageW / 2, 31, { align: 'center' });
+                        
+                        // Divider
+                        doc.setDrawColor(200);
+                        doc.line(14, 38, pageW - 14, 38);
+                        
+                        // Invoice Info
+                        doc.setFont('helvetica', 'bold');
+                        doc.setFontSize(11);
+                        doc.setTextColor(40);
+                        doc.text('INVOICE', 14, 48);
+                        
+                        doc.setFont('helvetica', 'normal');
+                        doc.setFontSize(9);
+                        doc.text(`Invoice No: ${s.invoiceNo}`, 14, 54);
+                        doc.text(`Date: ${format(new Date(s.saleDate), 'PPP p')}`, 14, 59);
+                        doc.text(`Sold By: ${s.user?.name}`, 14, 64);
+                        
+                        // Customer Info
+                        const custX = pageW - 14;
+                        doc.setFont('helvetica', 'bold');
+                        doc.text('BILL TO:', custX, 48, { align: 'right' });
+                        doc.setFont('helvetica', 'normal');
+                        doc.text(s.customer?.name || 'Walk-in Customer', custX, 54, { align: 'right' });
+                        if (s.customer?.phone) doc.text(s.customer.phone, custX, 59, { align: 'right' });
+                        
+                        // Items Table
+                        doc.autoTable({
+                          startY: 72,
+                          head: [['#', 'Item Details', 'Batch', 'Qty', 'Unit Price', 'Total']],
+                          body: s.items.map((item, i) => [
+                            i + 1,
+                            { content: item.product.name, styles: { fontStyle: 'bold' } },
+                            item.batch?.batchNumber || '-',
+                            item.quantity,
+                            `${curSymbol}${item.unitPrice.toFixed(2)}`,
+                            `${curSymbol}${item.totalPrice.toFixed(2)}`
+                          ]),
+                          styles: { fontSize: 9, cellPadding: 4, textColor: 50 },
+                          headStyles: { fillColor: [31, 152, 112], textColor: 255, fontSize: 10, fontStyle: 'bold' },
+                          alternateRowStyles: { fillColor: [245, 245, 245] },
+                          margin: { left: 14, right: 14 }
+                        });
+                        
+                        // Totals
+                        const finalY = doc.lastAutoTable.finalY + 10;
+                        const totalX = pageW - 14;
+                        
+                        doc.setFontSize(10);
+                        doc.setTextColor(100);
+                        doc.text('Subtotal:', totalX - 35, finalY);
+                        doc.text(`${curSymbol}${s.subtotal.toFixed(2)}`, totalX, finalY, { align: 'right' });
+                        
+                        if (s.discount > 0) {
+                          doc.text('Discount:', totalX - 35, finalY + 6);
+                          doc.text(`-${curSymbol}${s.discount.toFixed(2)}`, totalX, finalY + 6, { align: 'right' });
+                        }
+                        
+                        doc.setFont('helvetica', 'bold');
+                        doc.setFontSize(12);
+                        doc.setTextColor(31, 152, 112);
+                        doc.text('Grand Total:', totalX - 35, finalY + 14);
+                        doc.text(`${curSymbol}${s.totalAmount.toFixed(2)}`, totalX, finalY + 14, { align: 'right' });
+                        
+                        doc.setFont('helvetica', 'normal');
+                        doc.setFontSize(10);
+                        doc.setTextColor(100);
+                        doc.text('Amount Paid:', totalX - 35, finalY + 21);
+                        doc.setTextColor(0, 150, 0);
+                        doc.text(`${curSymbol}${s.paidAmount.toFixed(2)}`, totalX, finalY + 21, { align: 'right' });
+                        
+                        if (s.dueAmount > 0) {
+                          doc.setTextColor(200, 0, 0);
+                          doc.text('Due Amount:', totalX - 35, finalY + 27);
+                          doc.text(`${curSymbol}${s.dueAmount.toFixed(2)}`, totalX, finalY + 27, { align: 'right' });
+                        }
+                        
+                        // Footer
+                        doc.setFont('helvetica', 'italic');
+                        doc.setFontSize(8);
+                        doc.setTextColor(150);
+                        doc.text(settings.invoiceFooter || 'Thank you for your business!', pageW / 2, finalY + 45, { align: 'center' });
+                        doc.text('System generated invoice. No signature required.', pageW / 2, finalY + 50, { align: 'center' });
+                        
+                        doc.save(`Invoice-${s.invoiceNo}.pdf`);
+                      }} 
+                      className="btn-ghost btn-icon" 
+                      title="Print Invoice"
+                    >
+                      <Printer size={14} />
                     </button>
                   </td>
                 </tr>

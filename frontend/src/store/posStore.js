@@ -60,5 +60,9 @@ export const usePOSStore = create((set, get) => ({
 
   getSubtotal: () => get().cartItems.reduce((s, i) => s + (i.quantity * i.unitPrice) - i.discount, 0),
   getTotal: () => Math.max(0, get().getSubtotal() - (get().discount || 0)),
-  getDue: () => Math.max(0, get().getTotal() - (get().paidAmount || get().getTotal())),
+  getDue: () => {
+    const total = get().getTotal()
+    const paid = get().paidAmount
+    return Math.max(0, total - paid)
+  },
 }))
