@@ -191,3 +191,12 @@
 }
 .pos-product-card:hover { @apply border-brand-600; }
 .pos-product-card.out-of-stock { @apply opacity-40 cursor-not-allowed; }
+/* Disable arrows/spinners in number inputs */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type=number] {
+  -moz-appearance: textfield;
+}
