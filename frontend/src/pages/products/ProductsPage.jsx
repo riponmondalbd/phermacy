@@ -7,8 +7,11 @@ import { useAuthStore } from '../../store/authStore'
 import AdjustmentModal from '../../components/AdjustmentModal'
 import clsx from 'clsx'
 
-function ProductModal({ product, categories, onClose, onSave }) {
-  const [form, setForm] = useState(product || {
+function ProductModal({ product, categories, products, onClose, onSave }) {
+  const [form, setForm] = useState(product ? {
+    ...product,
+    categoryId: product.category?.name || '' // Show name for searchable input
+  } : {
     name: '', genericName: '', barcode: '', categoryId: '',
     unit: 'strip', piecesPerStrip: 10, stripsPerBox: 10,
     salePrice: '', minStockLevel: 10, description: '', requiresPrescription: false
@@ -39,18 +42,42 @@ function ProductModal({ product, categories, onClose, onSave }) {
         <div className="modal-body grid grid-cols-2 gap-4">
           <div className="form-group col-span-2">
             <label className="label">Product Name *</label>
-            <input className="input" value={form.name} onChange={e => set('name', e.target.value)} placeholder="e.g. Napa 500mg" />
+            <input 
+              className={clsx("input", product && "bg-[#1a1d27] cursor-not-allowed")} 
+              value={form.name} 
+              onChange={e => !product && set('name', e.target.value)} 
+              readOnly={!!product}
+              placeholder="e.g. Napa 500mg" 
+            />
+            {product && <p className="text-[10px] text-[#475569] mt-1 italic">Product name cannot be changed after creation.</p>}
           </div>
           <div className="form-group">
             <label className="label">Generic Name</label>
-            <input className="input" value={form.genericName || ''} onChange={e => set('genericName', e.target.value)} placeholder="e.g. Paracetamol" />
+            <input 
+              list="generic-names-list"
+              className="input" 
+              value={form.genericName || ''} 
+              onChange={e => set('genericName', e.target.value)} 
+              placeholder="e.g. Paracetamol" 
+            />
+            <datalist id="generic-names-list">
+              {[...new Set(products.map(p => p.genericName).filter(Boolean))].map((g, idx) => (
+                <option key={idx} value={g}>{g}</option>
+              ))}
+            </datalist>
           </div>
           <div className="form-group">
             <label className="label">Category</label>
-            <select className="select" value={form.categoryId || ''} onChange={e => set('categoryId', e.target.value)}>
-              <option value="">No Category</option>
-              {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+            <input 
+              list="product-categories-list"
+              className="input" 
+              value={form.categoryId || ''} 
+              onChange={e => set('categoryId', e.target.value)}
+              placeholder="Type or select category..."
+            />
+            <datalist id="product-categories-list">
+              {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+            </datalist>
           </div>
           <div className="form-group">
             <label className="label">Unit</label>
@@ -265,6 +292,7 @@ export default function ProductsPage() {
         <ProductModal
           product={modal === 'create' ? null : modal}
           categories={categories}
+          products={products}
           onClose={() => setModal(null)}
           onSave={handleSaved}
         />

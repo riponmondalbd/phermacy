@@ -115,19 +115,33 @@ router.post('/', authenticate, authorize('ADMIN', 'MANAGER'), [
   } = req.body;
 
   const product = await prisma.$transaction(async (tx) => {
-    // Get category name for barcode generation
-    let catName = 'GEN';
+    // 1. Resolve Category
+    let finalCategoryId = categoryId;
     if (categoryId) {
-      const cat = await tx.category.findUnique({ where: { id: categoryId } });
-      if (cat) catName = cat.name;
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(categoryId);
+      if (!isUUID) {
+        // Resolve by name or create
+        const cat = await tx.category.findFirst({ where: { name: { equals: categoryId } } });
+        if (cat) {
+          finalCategoryId = cat.id;
+        } else {
+          const newCat = await tx.category.create({ data: { name: categoryId } });
+          finalCategoryId = newCat.id;
+        }
+      }
     }
 
-    // Auto-generate barcode if not provided
-    const finalBarcode = barcode || `${catName.replace(/\s+/g, '')}_${name.replace(/\s+/g, '')}`;
+    // 2. Generate Barcode
+    let catName = 'GEN';
+    if (finalCategoryId) {
+      const cat = await tx.category.findUnique({ where: { id: finalCategoryId } });
+      if (cat) catName = cat.name;
+    }
+    const finalBarcode = barcode || `${catName.substring(0,3).toUpperCase()}_${name.replace(/\s+/g, '')}_${Date.now().toString().slice(-4)}`;
 
     const p = await tx.product.create({
       data: {
-        name, genericName, barcode: finalBarcode, categoryId: categoryId || null, unit,
+        name, genericName, barcode: finalBarcode, categoryId: finalCategoryId || null, unit,
         piecesPerStrip: parseInt(piecesPerStrip) || 1,
         stripsPerBox: parseInt(stripsPerBox) || 1,
         salePrice: parseFloat(salePrice),
@@ -163,10 +177,25 @@ router.put('/:id', authenticate, authorize('ADMIN', 'MANAGER'), asyncHandler(asy
   const { name, genericName, barcode, categoryId, unit, piecesPerStrip, stripsPerBox,
     salePrice, minStockLevel, description, requiresPrescription, isActive } = req.body;
 
+  let finalCategoryId = categoryId;
+  if (categoryId) {
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(categoryId);
+    if (!isUUID) {
+      // Resolve by name or create
+      const cat = await prisma.category.findFirst({ where: { name: { equals: categoryId } } });
+      if (cat) {
+        finalCategoryId = cat.id;
+      } else {
+        const newCat = await prisma.category.create({ data: { name: categoryId } });
+        finalCategoryId = newCat.id;
+      }
+    }
+  }
+
   const product = await prisma.product.update({
     where: { id: req.params.id },
     data: {
-      name, genericName, barcode, categoryId, unit,
+      name, genericName, barcode, categoryId: finalCategoryId, unit,
       piecesPerStrip: piecesPerStrip ? parseInt(piecesPerStrip) : undefined,
       stripsPerBox: stripsPerBox ? parseInt(stripsPerBox) : undefined,
       salePrice: salePrice ? parseFloat(salePrice) : undefined,
