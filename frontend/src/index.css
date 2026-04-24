@@ -1,0 +1,193 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg: #0f1117;
+    --bg-card: #1a1d27;
+    --bg-card2: #21263a;
+    --border: #2a2f45;
+    --text: #e2e8f0;
+    --text-muted: #94a3b8;
+    --accent: #1f9870;
+    --accent-light: #3eb388;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --success: #22c55e;
+    --info: #3b82f6;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, h5, h6 { font-weight: 600; line-height: 1.2; }
+
+  input, select, textarea, button { font-family: inherit; }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #2a2f45; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #3a4060; }
+
+  ::selection { background: rgba(31, 152, 112, 0.3); }
+}
+
+@layer components {
+  /* Cards */
+  .card {
+    @apply bg-[#1a1d27] border border-[#2a2f45] rounded-xl shadow-card;
+  }
+  .card-hover {
+    @apply hover:border-brand-700 hover:shadow-card-hover transition-all duration-200;
+  }
+
+  /* Buttons */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 font-medium rounded-lg
+           transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed
+           select-none cursor-pointer;
+  }
+  .btn-primary {
+    @apply btn px-4 py-2 bg-brand-600 text-white hover:bg-brand-500 active:bg-brand-700
+           shadow-sm text-sm;
+  }
+  .btn-secondary {
+    @apply btn px-4 py-2 bg-[#21263a] text-[#e2e8f0] border border-[#2a2f45]
+           hover:bg-[#2a2f45] text-sm;
+  }
+  .btn-danger {
+    @apply btn px-4 py-2 bg-red-600 text-white hover:bg-red-500 text-sm;
+  }
+  .btn-ghost {
+    @apply btn px-3 py-1.5 text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#21263a] text-sm;
+  }
+  .btn-sm { @apply px-3 py-1.5 text-xs; }
+  .btn-lg { @apply px-6 py-3 text-base; }
+  .btn-icon { @apply btn p-2 rounded-lg; }
+
+  /* Inputs */
+  .input {
+    @apply w-full bg-[#21263a] border border-[#2a2f45] text-[#e2e8f0]
+           rounded-lg px-3 py-2 text-sm outline-none
+           focus:border-brand-600 focus:ring-2 focus:ring-brand-600/20
+           placeholder:text-[#475569] transition-all duration-150;
+  }
+  .input-sm { @apply input py-1.5 text-xs; }
+  .label { @apply block text-xs font-medium text-[#94a3b8] mb-1; }
+
+  /* Select */
+  .select {
+    @apply input appearance-none cursor-pointer;
+  }
+
+  /* Badges */
+  .badge { @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium; }
+  .badge-green  { @apply badge bg-green-500/10 text-green-400; }
+  .badge-red    { @apply badge bg-red-500/10 text-red-400; }
+  .badge-yellow { @apply badge bg-yellow-500/10 text-yellow-400; }
+  .badge-blue   { @apply badge bg-blue-500/10 text-blue-400; }
+  .badge-gray   { @apply badge bg-gray-500/10 text-gray-400; }
+
+  /* Table */
+  .table-wrap { @apply w-full overflow-x-auto; }
+  .table {
+    @apply w-full text-sm text-left;
+  }
+  .table thead th {
+    @apply px-4 py-3 text-xs font-semibold text-[#94a3b8] uppercase tracking-wider
+           bg-[#21263a] border-b border-[#2a2f45] whitespace-nowrap;
+  }
+  .table tbody tr {
+    @apply border-b border-[#2a2f45] hover:bg-[#21263a]/50 transition-colors;
+  }
+  .table tbody td {
+    @apply px-4 py-3 text-[#e2e8f0];
+  }
+
+  /* Stat cards */
+  .stat-card {
+    @apply card p-5 flex flex-col gap-2;
+  }
+
+  /* Form group */
+  .form-group { @apply flex flex-col gap-1; }
+
+  /* Modal overlay */
+  .modal-overlay {
+    @apply fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in;
+  }
+  .modal-box {
+    @apply card w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-modal animate-slide-up;
+  }
+  .modal-header {
+    @apply flex items-center justify-between p-5 border-b border-[#2a2f45];
+  }
+  .modal-body { @apply p-5; }
+  .modal-footer {
+    @apply flex items-center justify-end gap-2 px-5 py-4 border-t border-[#2a2f45];
+  }
+
+  /* Page header */
+  .page-header {
+    @apply flex items-center justify-between mb-6;
+  }
+  .page-title {
+    @apply text-xl font-bold text-[#e2e8f0];
+  }
+  .page-subtitle { @apply text-sm text-[#94a3b8] mt-0.5; }
+
+  /* Nav item */
+  .nav-item {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
+           text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#21263a]
+           transition-all duration-150 cursor-pointer;
+  }
+  .nav-item.active {
+    @apply text-[#e2e8f0] bg-brand-600/20 text-brand-400;
+  }
+
+  /* Alert boxes */
+  .alert { @apply p-4 rounded-lg border text-sm; }
+  .alert-warning { @apply alert bg-yellow-500/10 border-yellow-500/30 text-yellow-300; }
+  .alert-danger   { @apply alert bg-red-500/10 border-red-500/30 text-red-300; }
+  .alert-success  { @apply alert bg-green-500/10 border-green-500/30 text-green-300; }
+  .alert-info     { @apply alert bg-blue-500/10 border-blue-500/30 text-blue-300; }
+
+  /* Divider */
+  .divider { @apply border-t border-[#2a2f45] my-4; }
+
+  /* Loading spinner */
+  .spinner {
+    @apply animate-spin rounded-full border-2 border-[#2a2f45] border-t-brand-500;
+  }
+}
+
+@layer utilities {
+  .text-muted { color: var(--text-muted); }
+  .bg-card { background: var(--bg-card); }
+  .bg-card2 { background: var(--bg-card2); }
+  .border-card { border-color: var(--border); }
+  .scrollbar-hide { scrollbar-width: none; }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .truncate-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+}
+
+/* POS specific */
+.pos-product-card {
+  @apply card p-3 cursor-pointer transition-all duration-150 card-hover
+         flex flex-col gap-2 select-none;
+}
+.pos-product-card:hover { @apply border-brand-600; }
+.pos-product-card.out-of-stock { @apply opacity-40 cursor-not-allowed; }

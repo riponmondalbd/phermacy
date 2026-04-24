@@ -1,0 +1,57 @@
+const express = require('express');
+const router = express.Router();
+const bcrypt = require('bcryptjs');
+const { PrismaClient } = require('@prisma/client');
+const { body, validationResult } = require('express-validator');
+const { authenticate, authorize } = require('../middleware/auth');
+const { asyncHandler } = require('../middleware/errorHandler');
+
+const prisma = new PrismaClient();
+
+// GET /api/users
+router.get('/', authenticate, authorize('ADMIN', 'MANAGER'), asyncHandler(async (req, res) => {
+  const users = await prisma.user.findMany({
+    select: { id: true, name: true, email: true, role: true, isActive: true, createdAt: true },
+    orderBy: { createdAt: 'desc' }
+  });
+  res.json(users);
+}));
+
+// POST /api/users
+router.post('/', authenticate, authorize('ADMIN'), [
+  body('name').notEmpty(),
+  body('email').isEmail(),
+  body('password').isLength({ min: 6 }),
+  body('role').isIn(['ADMIN', 'MANAGER', 'CASHIER'])
+], asyncHandler(async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+
+  const { name, email, password, role } = req.body;
+  const hashed = await bcrypt.hash(password, 10);
+  const user = await prisma.user.create({
+    data: { name, email, password: hashed, role },
+    select: { id: true, name: true, email: true, role: true, isActive: true }
+  });
+  res.status(201).json(user);
+}));
+
+// PUT /api/users/:id
+router.put('/:id', authenticate, authorize('ADMIN'), asyncHandler(async (req, res) => {
+  const { name, email, role, isActive } = req.body;
+  const user = await prisma.user.update({
+    where: { id: req.params.id },
+    data: { name, email, role, isActive },
+    select: { id: true, name: true, email: true, role: true, isActive: true }
+  });
+  res.json(user);
+}));
+
+// DELETE /api/users/:id
+router.delete('/:id', authenticate, authorize('ADMIN'), asyncHandler(async (req, res) => {
+  if (req.params.id === req.user.id) return res.status(400).json({ error: 'Cannot delete yourself' });
+  await prisma.user.update({ where: { id: req.params.id }, data: { isActive: false } });
+  res.json({ message: 'User deactivated' });
+}));
+
+module.exports = router;
