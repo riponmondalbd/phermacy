@@ -108,19 +108,52 @@ router.post('/', authenticate, authorize('ADMIN', 'MANAGER'), [
   const errors = validationResult(req);
   if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
-  const { name, genericName, barcode, categoryId, unit, piecesPerStrip, stripsPerBox,
-    salePrice, minStockLevel, description, requiresPrescription } = req.body;
+  const { 
+    name, genericName, barcode, categoryId, unit, piecesPerStrip, stripsPerBox,
+    salePrice, minStockLevel, description, requiresPrescription,
+    initialQuantity, expiryDate, batchNumber, purchasePrice
+  } = req.body;
 
-  const product = await prisma.product.create({
-    data: {
-      name, genericName, barcode, categoryId, unit,
-      piecesPerStrip: parseInt(piecesPerStrip) || 1,
-      stripsPerBox: parseInt(stripsPerBox) || 1,
-      salePrice: parseFloat(salePrice),
-      minStockLevel: parseInt(minStockLevel) || 10,
-      description, requiresPrescription: !!requiresPrescription
-    },
-    include: { category: true }
+  const product = await prisma.$transaction(async (tx) => {
+    // Get category name for barcode generation
+    let catName = 'GEN';
+    if (categoryId) {
+      const cat = await tx.category.findUnique({ where: { id: categoryId } });
+      if (cat) catName = cat.name;
+    }
+
+    // Auto-generate barcode if not provided
+    const finalBarcode = barcode || `${catName.replace(/\s+/g, '')}_${name.replace(/\s+/g, '')}`;
+
+    const p = await tx.product.create({
+      data: {
+        name, genericName, barcode: finalBarcode, categoryId: categoryId || null, unit,
+        piecesPerStrip: parseInt(piecesPerStrip) || 1,
+        stripsPerBox: parseInt(stripsPerBox) || 1,
+        salePrice: parseFloat(salePrice),
+        minStockLevel: parseInt(minStockLevel) || 10,
+        description, requiresPrescription: !!requiresPrescription
+      },
+      include: { category: true }
+    });
+
+    if (parseInt(initialQuantity) > 0) {
+      // Use expiry date as batch number if not provided
+      const finalBatchNo = batchNumber || (expiryDate ? expiryDate.replace(/-/g, '') : `B${Date.now()}`);
+      
+      await tx.batch.create({
+        data: {
+          productId: p.id,
+          batchNumber: finalBatchNo,
+          expiryDate: expiryDate ? new Date(expiryDate) : new Date(new Date().setFullYear(new Date().getFullYear() + 2)),
+          quantity: parseInt(initialQuantity),
+          initialQty: parseInt(initialQuantity),
+          purchasePrice: parseFloat(purchasePrice) || 0
+        }
+      });
+    }
+
+    return p;
   });
   res.status(201).json(product);
 }));

@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import api from '../../api/client'
 import toast from 'react-hot-toast'
-import { Plus, Search, Edit2, Trash2, Package, X, Check } from 'lucide-react'
+import { Plus, Search, Edit2, Trash2, Package, X, Check, ArrowUpDown } from 'lucide-react'
 import { useSettingsStore } from '../../store/settingsStore'
 import { useAuthStore } from '../../store/authStore'
+import AdjustmentModal from '../../components/AdjustmentModal'
 import clsx from 'clsx'
 
 function ProductModal({ product, categories, onClose, onSave }) {
@@ -45,10 +46,6 @@ function ProductModal({ product, categories, onClose, onSave }) {
             <input className="input" value={form.genericName || ''} onChange={e => set('genericName', e.target.value)} placeholder="e.g. Paracetamol" />
           </div>
           <div className="form-group">
-            <label className="label">Barcode</label>
-            <input className="input" value={form.barcode || ''} onChange={e => set('barcode', e.target.value)} placeholder="Scan or type" />
-          </div>
-          <div className="form-group">
             <label className="label">Category</label>
             <select className="select" value={form.categoryId || ''} onChange={e => set('categoryId', e.target.value)}>
               <option value="">No Category</option>
@@ -83,6 +80,26 @@ function ProductModal({ product, categories, onClose, onSave }) {
             <label className="label">Min Stock Alert Level</label>
             <input type="number" className="input" value={form.minStockLevel} onChange={e => set('minStockLevel', e.target.value)} min="0" />
           </div>
+
+          {/* Initial Stock Fields (Only for new products) */}
+          {!product && (
+            <div className="col-span-2 grid grid-cols-2 gap-4 p-4 bg-brand-600/5 border border-brand-600/10 rounded-xl mt-2">
+              <div className="col-span-2 text-xs font-bold text-brand-400 uppercase tracking-wider mb-1">Initial Stock (Optional)</div>
+              <div className="form-group">
+                <label className="label">Initial Quantity</label>
+                <input type="number" className="input" value={form.initialQuantity || ''} onChange={e => set('initialQuantity', e.target.value)} placeholder="0" />
+              </div>
+              <div className="form-group">
+                <label className="label">Expiry Date</label>
+                <input type="date" className="input" value={form.expiryDate || ''} onChange={e => set('expiryDate', e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label className="label">Purchase Price</label>
+                <input type="number" className="input" value={form.purchasePrice || ''} onChange={e => set('purchasePrice', e.target.value)} placeholder="0.00" />
+              </div>
+            </div>
+          )}
+
           <div className="form-group col-span-2">
             <label className="label">Description</label>
             <textarea className="input h-20 resize-none" value={form.description || ''} onChange={e => set('description', e.target.value)} />
@@ -113,6 +130,7 @@ export default function ProductsPage() {
   const [lowStock, setLowStock] = useState(false)
   const [loading, setLoading] = useState(true)
   const [modal, setModal] = useState(null) // null | 'create' | product
+  const [adjustModal, setAdjustModal] = useState(null) // null | { productId }
   const { settings } = useSettingsStore()
   const { isManager } = useAuthStore()
   const cur = settings.currency || '৳'
@@ -220,8 +238,9 @@ export default function ProductsPage() {
                   {isManager() && (
                     <td>
                       <div className="flex items-center gap-1">
-                        <button onClick={() => setModal(p)} className="btn-ghost btn-icon"><Edit2 size={14} /></button>
-                        <button onClick={() => handleDelete(p.id)} className="btn-ghost btn-icon text-red-400 hover:text-red-300"><Trash2 size={14} /></button>
+                        <button onClick={() => setModal(p)} className="btn-ghost btn-icon" title="Edit"><Edit2 size={14} /></button>
+                        <button onClick={() => setAdjustModal({ productId: p.id })} className="btn-ghost btn-icon text-brand-400" title="Adjust Stock"><ArrowUpDown size={14} /></button>
+                        <button onClick={() => handleDelete(p.id)} className="btn-ghost btn-icon text-red-400 hover:text-red-300" title="Deactivate"><Trash2 size={14} /></button>
                       </div>
                     </td>
                   )}
@@ -248,6 +267,14 @@ export default function ProductsPage() {
           categories={categories}
           onClose={() => setModal(null)}
           onSave={handleSaved}
+        />
+      )}
+
+      {adjustModal && (
+        <AdjustmentModal
+          prefill={adjustModal}
+          onClose={() => setAdjustModal(null)}
+          onSave={() => { setAdjustModal(null); fetchProducts() }}
         />
       )}
     </div>
