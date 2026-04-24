@@ -15,6 +15,12 @@ function ReturnModal({ onClose, onSave }) {
   const [saving, setSaving] = useState(false)
   const [reason, setReason] = useState('')
 
+  useEffect(() => {
+    const handleEsc = (e) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', handleEsc)
+    return () => window.removeEventListener('keydown', handleEsc)
+  }, [onClose])
+
   const findSale = async () => {
     if (!invoiceSearch) return
     setLoading(true)

@@ -10,6 +10,12 @@ function UserModal({ user, onClose, onSave }) {
   const [form, setForm] = useState(user || { name: '', email: '', password: '', role: 'CASHIER' })
   const [saving, setSaving] = useState(false)
 
+  useEffect(() => {
+    const handleEsc = (e) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', handleEsc)
+    return () => window.removeEventListener('keydown', handleEsc)
+  }, [onClose])
+
   const handleSave = async () => {
     if (!form.name || !form.email || (!user && !form.password)) return toast.error('Required fields missing')
     setSaving(true)

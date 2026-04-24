@@ -11,6 +11,12 @@ function ExpenseModal({ sessionId, onClose, onSave }) {
   const [form, setForm] = useState({ category: '', amount: '', description: '' })
   const [saving, setSaving] = useState(false)
 
+  useEffect(() => {
+    const handleEsc = (e) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', handleEsc)
+    return () => window.removeEventListener('keydown', handleEsc)
+  }, [onClose])
+
   const handleSave = async () => {
     if (!form.category || !form.amount) return toast.error('Required fields missing')
     setSaving(true)
@@ -63,6 +69,12 @@ function ExpenseModal({ sessionId, onClose, onSave }) {
 function CloseSessionModal({ session, onClose, onSave }) {
   const [closingCash, setClosingCash] = useState('')
   const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    const handleEsc = (e) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', handleEsc)
+    return () => window.removeEventListener('keydown', handleEsc)
+  }, [onClose])
 
   const handleClose = async () => {
     setSaving(true)
