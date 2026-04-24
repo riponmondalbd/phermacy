@@ -11,6 +11,12 @@ function SaleDetailsModal({ sale, onClose }) {
   const { settings } = useSettingsStore()
   const cur = settings.currency || '৳'
 
+  useEffect(() => {
+    const handleEsc = (e) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', handleEsc)
+    return () => window.removeEventListener('keydown', handleEsc)
+  }, [onClose])
+
   const printInvoice = () => {
     const doc = new jsPDF({ format: 'a4' })
     const pageW = doc.internal.pageSize.width

@@ -11,6 +11,12 @@ function CustomerModal({ customer, onClose, onSave }) {
   const [form, setForm] = useState(customer || { name: '', phone: '', email: '', address: '' })
   const [saving, setSaving] = useState(false)
 
+  useEffect(() => {
+    const handleEsc = (e) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', handleEsc)
+    return () => window.removeEventListener('keydown', handleEsc)
+  }, [onClose])
+
   const handleSave = async () => {
     if (!form.name) return toast.error('Name is required')
     setSaving(true)
@@ -62,6 +68,12 @@ function CustomerModal({ customer, onClose, onSave }) {
 function PaymentModal({ customer, onClose, onSave }) {
   const [form, setForm] = useState({ amount: '', method: 'cash', notes: '' })
   const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    const handleEsc = (e) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', handleEsc)
+    return () => window.removeEventListener('keydown', handleEsc)
+  }, [onClose])
 
   const handleSave = async () => {
     if (!form.amount || parseFloat(form.amount) <= 0) return toast.error('Valid amount required')
@@ -116,6 +128,12 @@ function HistoryModal({ customer, onClose }) {
   const [loading, setLoading] = useState(true)
   const { settings } = useSettingsStore()
   const cur = settings.currency || '৳'
+
+  useEffect(() => {
+    const handleEsc = (e) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', handleEsc)
+    return () => window.removeEventListener('keydown', handleEsc)
+  }, [onClose])
 
   useEffect(() => {
     const fetchHistory = async () => {

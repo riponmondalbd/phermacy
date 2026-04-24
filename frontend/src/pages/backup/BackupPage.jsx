@@ -5,6 +5,7 @@ import { Database, Download, Trash2, CloudUpload, History, FileArchive, Check, S
 import { format } from 'date-fns'
 import { useAuthStore } from '../../store/authStore'
 import { useSettingsStore } from '../../store/settingsStore'
+import { confirmDelete } from '../../utils/swal'
 
 export default function BackupPage() {
   const [backups, setBackups] = useState([])
@@ -37,7 +38,9 @@ export default function BackupPage() {
   }
 
   const handleDelete = async (name) => {
-    if (!confirm('Delete this backup? This cannot be undone.')) return
+    const result = await confirmDelete('Delete Backup?', 'This backup file will be permanently removed.')
+    if (!result.isConfirmed) return
+    
     try {
       await api.delete(`/backup/${name}`)
       toast.success('Backup deleted')
@@ -53,7 +56,8 @@ export default function BackupPage() {
     const file = e.target.files[0]
     if (!file) return
 
-    if (!confirm('WARNING: Restoring will overwrite all current data. Are you sure?')) {
+    const result = await confirmDelete('Restore Database?', 'WARNING: This will overwrite ALL current data with this backup file. This cannot be undone!')
+    if (!result.isConfirmed) {
       e.target.value = ''
       return
     }
