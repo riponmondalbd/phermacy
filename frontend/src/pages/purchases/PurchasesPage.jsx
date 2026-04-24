@@ -55,7 +55,7 @@ function PurchaseModal({ onClose, onSave, suppliers, products, categories, initi
         genericName: existing.genericName || '',
         unit: existing.unit || 'piece',
         sellingPrice: existing.salePrice || 0,
-        category: existing.categoryId || ''
+        category: existing.category?.name || '' // Use name instead of ID
       }))
     } else {
       setItemForm(prev => ({ ...prev, productId: val, productName: val }))
@@ -170,7 +170,7 @@ function PurchaseModal({ onClose, onSave, suppliers, products, categories, initi
                   placeholder="Category..."
                 />
                 <datalist id="categories-list">
-                  {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                  {(Array.isArray(categories) ? categories : []).map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                 </datalist>
               </div>
               <div className="form-group">
