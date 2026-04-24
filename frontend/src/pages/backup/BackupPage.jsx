@@ -1,14 +1,19 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import api from '../../api/client'
 import toast from 'react-hot-toast'
 import { Database, Download, Trash2, CloudUpload, History, FileArchive, Check, ShieldAlert } from 'lucide-react'
 import { format } from 'date-fns'
-import clsx from 'clsx'
+import { useAuthStore } from '../../store/authStore'
+import { useSettingsStore } from '../../store/settingsStore'
 
 export default function BackupPage() {
   const [backups, setBackups] = useState([])
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
+  const [restoring, setRestoring] = useState(false)
+  const { token } = useAuthStore()
+  const { settings } = useSettingsStore()
+  const fileInputRef = useRef()
 
   const fetchBackups = async () => {
     setLoading(true)
@@ -26,6 +31,8 @@ export default function BackupPage() {
       await api.post('/backup/create')
       toast.success('Backup created successfully')
       fetchBackups()
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Backup failed')
     } finally { setCreating(false) }
   }
 
@@ -36,6 +43,42 @@ export default function BackupPage() {
       toast.success('Backup deleted')
       fetchBackups()
     } catch (_) {}
+  }
+
+  const handleRestoreClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleRestoreFile = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+
+    if (!confirm('WARNING: Restoring will overwrite all current data. Are you sure?')) {
+      e.target.value = ''
+      return
+    }
+
+    setRestoring(true)
+    const formData = new FormData()
+    formData.append('file', file)
+
+    try {
+      await api.post('/backup/restore', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+      toast.success('Restore successful! Redirecting to login...', { duration: 3000 })
+      
+      // Force logout and reload after 2 seconds
+      setTimeout(() => {
+        localStorage.clear() // Clear all persisted state
+        window.location.href = '/login'
+      }, 2500)
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Restore failed')
+    } finally { 
+      setRestoring(false) 
+      e.target.value = ''
+    }
   }
 
   const formatSize = (bytes) => {
@@ -51,11 +94,27 @@ export default function BackupPage() {
           <h1 className="page-title">Database Backup</h1>
           <p className="page-subtitle">Secure your data with local and cloud backups</p>
         </div>
-        <button onClick={handleCreate} disabled={creating} className="btn-primary">
-          {creating ? <span className="spinner w-4 h-4 mr-2" /> : <Database size={16} className="mr-2" />}
-          Create New Backup
-        </button>
+        <div className="flex flex-col md:flex-row md:items-center gap-3">
+          {settings.last_restore_info && (
+            <div className="flex items-center gap-1.5 px-2 py-1 bg-brand-600/10 rounded-md border border-brand-600/20">
+              <div className="w-1.5 h-1.5 rounded-full bg-brand-400 animate-pulse" />
+              <span className="text-[9px] text-brand-300 uppercase font-bold tracking-tight">Active: {settings.last_restore_info}</span>
+            </div>
+          )}
+          <button onClick={handleCreate} disabled={creating} className="btn-primary btn-sm md:btn-md">
+            {creating ? <span className="spinner w-3 h-3 mr-2" /> : <Database size={14} className="mr-2" />}
+            Create Backup
+          </button>
+        </div>
       </div>
+
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        className="hidden" 
+        accept=".zip" 
+        onChange={handleRestoreFile} 
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="card p-6 bg-brand-600/5 border-brand-600/20 space-y-4">
@@ -84,8 +143,13 @@ export default function BackupPage() {
               <p className="text-xs text-[#94a3b8]">Restoring will overwrite current data</p>
             </div>
           </div>
-          <button className="btn-secondary w-full border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/10">
-            <CloudUpload size={16} className="mr-2" /> Restore from File
+          <button 
+            onClick={handleRestoreClick} 
+            disabled={restoring}
+            className="btn-secondary w-full border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/10"
+          >
+            {restoring ? <span className="spinner w-4 h-4 mr-2" /> : <CloudUpload size={16} className="mr-2" />}
+            {restoring ? 'Restoring Data...' : 'Restore from File'}
           </button>
         </div>
       </div>
@@ -123,7 +187,7 @@ export default function BackupPage() {
                   <td className="text-right">
                     <div className="flex justify-end gap-1">
                       <a 
-                        href={`/api/backup/download/${b.name}?token=${localStorage.getItem('token')}`} 
+                        href={`/api/backup/download/${b.name}?token=${token}`} 
                         className="btn-ghost btn-icon" 
                         title="Download"
                       >
