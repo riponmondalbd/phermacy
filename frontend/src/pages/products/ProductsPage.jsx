@@ -18,6 +18,12 @@ function ProductModal({ product, categories, products, onClose, onSave }) {
   })
   const [saving, setSaving] = useState(false)
 
+  useEffect(() => {
+    const handleEsc = (e) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', handleEsc)
+    return () => window.removeEventListener('keydown', handleEsc)
+  }, [onClose])
+
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
   const handleSave = async () => {

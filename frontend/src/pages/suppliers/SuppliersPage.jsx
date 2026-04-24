@@ -13,6 +13,12 @@ function SupplierModal({ supplier, onClose, onSave }) {
   })
   const [saving, setSaving] = useState(false)
 
+  useEffect(() => {
+    const handleEsc = (e) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', handleEsc)
+    return () => window.removeEventListener('keydown', handleEsc)
+  }, [onClose])
+
   const handleSave = async () => {
     if (!form.name) return toast.error('Name is required')
     setSaving(true)
@@ -71,6 +77,12 @@ function PaymentModal({ supplier, onClose, onSave }) {
   const [form, setForm] = useState({ amount: '', method: 'cash', notes: '' })
   const [saving, setSaving] = useState(false)
 
+  useEffect(() => {
+    const handleEsc = (e) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', handleEsc)
+    return () => window.removeEventListener('keydown', handleEsc)
+  }, [onClose])
+
   const handleSave = async () => {
     if (!form.amount || parseFloat(form.amount) <= 0) return toast.error('Valid amount required')
     setSaving(true)
@@ -123,6 +135,12 @@ function SupplierLedgerModal({ supplier, onClose, cur }) {
   const [data, setData] = useState({ purchases: [], payments: [] })
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('due') // 'due' | 'paid'
+
+  useEffect(() => {
+    const handleEsc = (e) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', handleEsc)
+    return () => window.removeEventListener('keydown', handleEsc)
+  }, [onClose])
 
   useEffect(() => {
     const fetchLedger = async () => {

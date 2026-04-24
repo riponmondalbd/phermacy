@@ -22,6 +22,12 @@ export default function AdjustmentModal({ onClose, onSave, prefill = null }) {
   const [newTotal, setNewTotal] = useState('')
 
   useEffect(() => {
+    const handleEsc = (e) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', handleEsc)
+    return () => window.removeEventListener('keydown', handleEsc)
+  }, [onClose])
+
+  useEffect(() => {
     const fetchProducts = async () => {
       try {
         const { data } = await api.get('/inventory/stock')

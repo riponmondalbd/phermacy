@@ -43,6 +43,12 @@ function PurchaseModal({ onClose, onSave, suppliers, products, categories, initi
   })
   const [saving, setSaving] = useState(false)
 
+  useEffect(() => {
+    const handleEsc = (e) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', handleEsc)
+    return () => window.removeEventListener('keydown', handleEsc)
+  }, [onClose])
+
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
   const handleProductInput = (val) => {
@@ -277,6 +283,12 @@ function PurchaseModal({ onClose, onSave, suppliers, products, categories, initi
 }
 
 function ViewPurchaseModal({ purchase, onClose, cur }) {
+  useEffect(() => {
+    const handleEsc = (e) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', handleEsc)
+    return () => window.removeEventListener('keydown', handleEsc)
+  }, [onClose])
+
   if (!purchase) return null
   return (
     <div className="modal-overlay">
