@@ -63,6 +63,11 @@ export default function AdjustmentModal({ onClose, onSave, prefill = null }) {
       finalQty = parseFloat(newTotal) - selectedBatch.quantity
     }
 
+    // For DAMAGE type, we set quantity to 0 (remove all stock)
+    if (form.type === 'DAMAGE' && selectedBatch) {
+      finalQty = -selectedBatch.quantity
+    }
+
     if (!form.productId || !form.reason) {
        if (!form.reason) return toast.error('Reason is required')
        if (!form.productId) return toast.error('Product is required')
@@ -70,14 +75,14 @@ export default function AdjustmentModal({ onClose, onSave, prefill = null }) {
     
     if (form.type === 'EXPIRED') return toast.error('Expired mode is for viewing only. Use Damage to remove stock.')
     
-    if (form.type !== 'ADD_BATCH' && finalQty === 0 && newTotal === '') return toast.error('Please provide a quantity')
+    if (form.type !== 'ADD_BATCH' && form.type !== 'DAMAGE' && finalQty === 0 && newTotal === '') return toast.error('Please provide a quantity')
     if (form.type !== 'ADD_BATCH' && !form.batchId) return toast.error('Please select a specific batch')
     if (form.type === 'ADD_BATCH' && !form.expiryDate) return toast.error('Expiry date required for new batch')
     
     setSaving(true)
     try {
       await api.post('/inventory/adjust', { ...form, quantity: finalQty })
-      toast.success('Stock adjusted')
+      toast.success(form.type === 'DAMAGE' ? 'Stock removed (Damaged)' : 'Stock adjusted')
       onSave()
     } finally { setSaving(false) }
   }
@@ -180,7 +185,7 @@ export default function AdjustmentModal({ onClose, onSave, prefill = null }) {
             </div>
           )}
 
-          {form.type !== 'ADD_BATCH' && form.type !== 'EXPIRED' && (
+          {form.type !== 'ADD_BATCH' && form.type !== 'EXPIRED' && form.type !== 'DAMAGE' && (
             <div className="form-group">
               <label className="label">Adjustment (+/- Quantity)</label>
               <input 
@@ -190,6 +195,12 @@ export default function AdjustmentModal({ onClose, onSave, prefill = null }) {
                 onChange={e => setForm({...form, quantity: e.target.value})} 
                 placeholder="e.g. +10 to add, -5 to subtract" 
               />
+            </div>
+          )}
+
+          {form.type === 'DAMAGE' && selectedBatch && (
+            <div className="p-3 bg-red-400/10 border border-red-400/20 rounded-lg text-xs text-red-400 italic">
+              All {selectedBatch.quantity} units in this batch will be marked as damaged and removed from active stock.
             </div>
           )}
 
