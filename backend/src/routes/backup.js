@@ -68,7 +68,8 @@ router.get('/list', authenticate, authorize('ADMIN', 'MANAGER'), asyncHandler(as
 
 // GET /api/backup/download/:filename
 router.get('/download/:filename', authenticate, authorize('ADMIN'), asyncHandler(async (req, res) => {
-  const file = path.join(BACKUP_DIR, req.params.filename);
+  const safeFilename = path.basename(req.params.filename);
+  const file = path.join(BACKUP_DIR, safeFilename);
   if (!fs.existsSync(file)) return res.status(404).json({ error: 'Backup file not found' });
   res.download(file);
 }));
@@ -120,7 +121,8 @@ router.post('/restore', authenticate, authorize('ADMIN'), upload.single('file'),
 
 // DELETE /api/backup/:filename
 router.delete('/:filename', authenticate, authorize('ADMIN'), asyncHandler(async (req, res) => {
-  const file = path.join(BACKUP_DIR, req.params.filename);
+  const safeFilename = path.basename(req.params.filename);
+  const file = path.join(BACKUP_DIR, safeFilename);
   if (!fs.existsSync(file)) return res.status(404).json({ error: 'File not found' });
   fs.unlinkSync(file);
   res.json({ message: 'Backup deleted' });
