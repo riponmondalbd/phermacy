@@ -5,6 +5,7 @@ import { Plus, Search, Eye, Trash2, ShoppingBag, X, Check, Calendar, Pencil } fr
 import { useSettingsStore } from '../../store/settingsStore'
 import { useAuthStore } from '../../store/authStore'
 import { format } from 'date-fns'
+import { confirmDelete } from '../../utils/swal'
 import clsx from 'clsx'
 
 function PurchaseModal({ onClose, onSave, suppliers, products, categories, initialData }) {
@@ -408,7 +409,9 @@ export default function PurchasesPage() {
   const handleSaved = () => { setModal(null); fetchData() }
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Delete this purchase? This will remove associated stock batches!')) return
+    const result = await confirmDelete('Delete Purchase?', 'This will remove all associated stock batches from inventory!')
+    if (!result.isConfirmed) return
+    
     try {
       await api.delete(`/purchases/${id}`)
       toast.success('Purchase deleted')

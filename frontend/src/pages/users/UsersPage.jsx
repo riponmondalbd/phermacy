@@ -4,6 +4,7 @@ import toast from 'react-hot-toast'
 import { Plus, User, Edit2, Trash2, Key, Shield, Check, X, Mail } from 'lucide-react'
 import clsx from 'clsx'
 import { format } from 'date-fns'
+import { confirmDelete } from '../../utils/swal'
 
 function UserModal({ user, onClose, onSave }) {
   const [form, setForm] = useState(user || { name: '', email: '', password: '', role: 'CASHIER' })
@@ -46,7 +47,8 @@ function UserModal({ user, onClose, onSave }) {
           <div className="form-group">
             <label className="label">Access Role</label>
             <select className="select" value={form.role} onChange={e => setForm({...form, role: e.target.value})}>
-              <option value="CASHIER">Cashier (POS & Sales)</option>
+              <option value="SALESMAN">Salesman (Sell, Cash & Returns Only)</option>
+              <option value="CASHIER">Cashier (Standard Sales Access)</option>
               <option value="MANAGER">Manager (Full Access, no Settings)</option>
               <option value="ADMIN">Administrator (All Permissions)</option>
             </select>
@@ -77,7 +79,9 @@ export default function UsersPage() {
   useEffect(() => { fetchUsers() }, [])
 
   const handleDeactivate = async (id) => {
-    if (!confirm('Are you sure you want to deactivate this user?')) return
+    const result = await confirmDelete('Revoke Access?', 'This user will no longer be able to log into the system.')
+    if (!result.isConfirmed) return
+    
     await api.delete(`/users/${id}`)
     toast.success('User access revoked')
     fetchUsers()

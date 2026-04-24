@@ -22,7 +22,7 @@ router.post('/', authenticate, authorize('ADMIN'), [
   body('name').notEmpty(),
   body('email').isEmail(),
   body('password').isLength({ min: 6 }),
-  body('role').isIn(['ADMIN', 'MANAGER', 'CASHIER'])
+  body('role').isIn(['ADMIN', 'MANAGER', 'CASHIER', 'SALESMAN'])
 ], asyncHandler(async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });

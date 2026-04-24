@@ -5,6 +5,7 @@ import { Plus, Search, Edit2, Trash2, Package, X, Check, ArrowUpDown } from 'luc
 import { useSettingsStore } from '../../store/settingsStore'
 import { useAuthStore } from '../../store/authStore'
 import AdjustmentModal from '../../components/AdjustmentModal'
+import { confirmDelete } from '../../utils/swal'
 import clsx from 'clsx'
 
 function ProductModal({ product, categories, products, onClose, onSave }) {
@@ -185,7 +186,9 @@ export default function ProductsPage() {
   useEffect(() => { fetchProducts() }, [page, search, catFilter, lowStock])
 
   const handleDelete = async (id) => {
-    if (!confirm('Deactivate this product?')) return
+    const result = await confirmDelete('Deactivate Product?', 'This product will no longer be available for sale.')
+    if (!result.isConfirmed) return
+    
     await api.delete(`/products/${id}`)
     toast.success('Product deactivated')
     fetchProducts()

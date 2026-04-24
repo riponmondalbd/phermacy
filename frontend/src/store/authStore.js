@@ -15,6 +15,15 @@ export const useAuthStore = create(
 
       isAdmin: () => get().user?.role === 'ADMIN',
       isManager: () => ['ADMIN', 'MANAGER'].includes(get().user?.role),
+      isSalesman: () => get().user?.role === 'SALESMAN',
+      canEdit: (page) => {
+        const role = get().user?.role;
+        if (['ADMIN', 'MANAGER'].includes(role)) return true;
+        if (role === 'SALESMAN') {
+          return ['pos', 'cash', 'returns'].includes(page);
+        }
+        return false;
+      }
     }),
     {
       name: 'pharmacy-auth',
