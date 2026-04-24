@@ -111,12 +111,76 @@ function PaymentModal({ customer, onClose, onSave }) {
   )
 }
 
+function HistoryModal({ customer, onClose }) {
+  const [history, setHistory] = useState([])
+  const [loading, setLoading] = useState(true)
+  const { settings } = useSettingsStore()
+  const cur = settings.currency || '৳'
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const { data } = await api.get(`/sales?customerId=${customer.id}`)
+        setHistory(data.data)
+      } finally { setLoading(false) }
+    }
+    fetchHistory()
+  }, [customer.id])
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-box max-w-2xl">
+        <div className="modal-header">
+          <h3 className="font-semibold text-[#e2e8f0]">Purchase History: {customer.name}</h3>
+          <button onClick={onClose} className="btn-ghost btn-icon"><X size={16} /></button>
+        </div>
+        <div className="modal-body p-0">
+          <div className="table-wrap max-h-96 overflow-y-auto">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Invoice</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr><td colSpan={4} className="text-center py-8"><div className="spinner w-5 h-5 mx-auto" /></td></tr>
+                ) : history.length === 0 ? (
+                  <tr><td colSpan={4} className="text-center py-8 text-[#94a3b8]">No history found</td></tr>
+                ) : history.map(h => (
+                  <tr key={h.id}>
+                    <td className="text-xs text-[#94a3b8]">{format(new Date(h.saleDate), 'MMM d, yyyy')}</td>
+                    <td className="font-medium text-xs text-[#e2e8f0]">{h.invoiceNo}</td>
+                    <td className="text-xs font-semibold">{cur}{h.totalAmount.toFixed(2)}</td>
+                    <td>
+                      <span className={clsx('badge-xs', h.dueAmount > 0 ? 'badge-red' : 'badge-green')}>
+                        {h.dueAmount > 0 ? 'Due' : 'Paid'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div className="modal-footer">
+          <button onClick={onClose} className="btn-secondary">Close</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function CustomersPage() {
   const [customers, setCustomers] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [modal, setModal] = useState(null)
   const [paymentModal, setPaymentModal] = useState(null)
+  const [historyModal, setHistoryModal] = useState(null)
   const { settings } = useSettingsStore()
   const cur = settings.currency || '৳'
 
@@ -189,7 +253,7 @@ export default function CustomersPage() {
                   <td>
                     <div className="flex items-center gap-1">
                       <button onClick={() => setModal(c)} className="btn-ghost btn-icon" title="Edit"><Edit2 size={14} /></button>
-                      <button className="btn-ghost btn-icon" title="History"><History size={14} /></button>
+                      <button onClick={() => setHistoryModal(c)} className="btn-ghost btn-icon" title="History"><History size={14} /></button>
                       {c.dueAmount > 0 && (
                         <button onClick={() => setPaymentModal(c)} className="btn-ghost btn-icon text-brand-400" title="Receive Payment">
                           <DollarSign size={14} />
@@ -217,6 +281,13 @@ export default function CustomersPage() {
           customer={paymentModal}
           onClose={() => setPaymentModal(null)}
           onSave={() => { setPaymentModal(null); fetchCustomers() }}
+        />
+      )}
+
+      {historyModal && (
+        <HistoryModal
+          customer={historyModal}
+          onClose={() => setHistoryModal(null)}
         />
       )}
     </div>

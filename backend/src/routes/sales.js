@@ -101,11 +101,25 @@ router.post('/', authenticate, [
 
   const invoiceNo = await generateInvoiceNo();
 
+  let finalCustomerId = customerId;
+
+  // Auto-create customer if name provided instead of ID
+  if (!customerId && req.body.customerName) {
+    const newCustomer = await prisma.customer.create({
+      data: {
+        name: req.body.customerName,
+        phone: req.body.customerPhone || '',
+        address: req.body.customerAddress || ''
+      }
+    });
+    finalCustomerId = newCustomer.id;
+  }
+
   const result = await prisma.$transaction(async (tx) => {
     const sale = await tx.sale.create({
       data: {
         invoiceNo,
-        customerId: customerId || null,
+        customerId: finalCustomerId || null,
         userId: req.user.id,
         subtotal,
         discount: parseFloat(discount),
