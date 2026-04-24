@@ -4,6 +4,7 @@ import toast from 'react-hot-toast'
 import { Plus, Search, Edit2, Trash2, Truck, X, Check, Phone, Mail, MapPin, DollarSign } from 'lucide-react'
 import { useSettingsStore } from '../../store/settingsStore'
 import { useAuthStore } from '../../store/authStore'
+import { format } from 'date-fns'
 import clsx from 'clsx'
 
 function SupplierModal({ supplier, onClose, onSave }) {
@@ -118,12 +119,114 @@ function PaymentModal({ supplier, onClose, onSave }) {
   )
 }
 
+function SupplierLedgerModal({ supplier, onClose, cur }) {
+  const [data, setData] = useState({ purchases: [], payments: [] })
+  const [loading, setLoading] = useState(true)
+  const [tab, setTab] = useState('due') // 'due' | 'paid'
+
+  useEffect(() => {
+    const fetchLedger = async () => {
+      setLoading(true)
+      try {
+        const { data: res } = await api.get(`/suppliers/${supplier.id}/ledger`)
+        setData(res)
+      } finally { setLoading(false) }
+    }
+    fetchLedger()
+  }, [supplier.id])
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-box max-w-3xl">
+        <div className="modal-header">
+          <div>
+            <h3 className="font-semibold text-[#e2e8f0]">{supplier.name} - Ledger</h3>
+            <p className="text-xs text-[#94a3b8]">Financial history and account status</p>
+          </div>
+          <button onClick={onClose} className="btn-ghost btn-icon"><X size={16} /></button>
+        </div>
+        <div className="modal-body space-y-4">
+          <div className="flex p-1 bg-[#1a1d27] border border-[#2a2f45] rounded-xl w-fit">
+            <button 
+              onClick={() => setTab('due')} 
+              className={clsx('px-4 py-1.5 text-xs font-medium rounded-lg transition-all', tab === 'due' ? 'bg-brand-600 text-white shadow-lg' : 'text-[#94a3b8] hover:text-white')}
+            >
+              Due List (Purchases)
+            </button>
+            <button 
+              onClick={() => setTab('paid')} 
+              className={clsx('px-4 py-1.5 text-xs font-medium rounded-lg transition-all', tab === 'paid' ? 'bg-green-600 text-white shadow-lg' : 'text-[#94a3b8] hover:text-white')}
+            >
+              Paid List (Payments)
+            </button>
+          </div>
+
+          <div className="table-wrap border border-[#2a2f45] rounded-lg min-h-[300px]">
+            <table className="table table-sm">
+              <thead>
+                {tab === 'due' ? (
+                  <tr>
+                    <th>Date</th>
+                    <th>Invoice</th>
+                    <th className="text-right">Total</th>
+                    <th className="text-right">Paid</th>
+                    <th className="text-right text-red-400">Due</th>
+                  </tr>
+                ) : (
+                  <tr>
+                    <th>Date</th>
+                    <th>Method</th>
+                    <th>Ref/Notes</th>
+                    <th className="text-right">Amount</th>
+                  </tr>
+                )}
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr><td colSpan={5} className="text-center py-12"><div className="spinner w-6 h-6 mx-auto" /></td></tr>
+                ) : tab === 'due' ? (
+                  data.purchases.length === 0 ? (
+                    <tr><td colSpan={5} className="text-center py-8 text-[#94a3b8]">No purchase history</td></tr>
+                  ) : data.purchases.map(p => (
+                    <tr key={p.id}>
+                      <td className="text-xs">{format(new Date(p.purchaseDate), 'MMM d, yyyy')}</td>
+                      <td className="font-mono text-[10px]">{p.invoiceNo || 'N/A'}</td>
+                      <td className="text-right">{cur}{p.totalAmount.toFixed(2)}</td>
+                      <td className="text-right text-green-400">{cur}{p.paidAmount.toFixed(2)}</td>
+                      <td className="text-right text-red-400 font-bold">{cur}{p.dueAmount.toFixed(2)}</td>
+                    </tr>
+                  ))
+                ) : (
+                  data.payments.length === 0 ? (
+                    <tr><td colSpan={4} className="text-center py-8 text-[#94a3b8]">No payment history</td></tr>
+                  ) : data.payments.map(p => (
+                    <tr key={p.id}>
+                      <td className="text-xs">{format(new Date(p.paymentDate), 'MMM d, yyyy p')}</td>
+                      <td className="capitalize text-xs">{p.method}</td>
+                      <td className="text-xs text-[#94a3b8]">{p.notes || '—'}</td>
+                      <td className="text-right text-green-400 font-bold">{cur}{p.amount.toFixed(2)}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div className="modal-footer">
+          <button onClick={onClose} className="btn-secondary w-full">Close Ledger</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function SuppliersPage() {
   const [suppliers, setSuppliers] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [modal, setModal] = useState(null) // null | 'create' | supplier
   const [paymentModal, setPaymentModal] = useState(null)
+  const [ledgerModal, setLedgerModal] = useState(null)
   const { settings } = useSettingsStore()
   const { isManager } = useAuthStore()
   const cur = settings.currency || '৳'
@@ -175,6 +278,7 @@ export default function SuppliersPage() {
                 </div>
               </div>
               <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button onClick={() => setLedgerModal(s)} className="btn-ghost btn-icon text-brand-400" title="View Ledger"><DollarSign size={14} /></button>
                 <button onClick={() => setModal(s)} className="btn-ghost btn-icon"><Edit2 size={14} /></button>
               </div>
             </div>
@@ -221,6 +325,14 @@ export default function SuppliersPage() {
           supplier={paymentModal}
           onClose={() => setPaymentModal(null)}
           onSave={() => { setPaymentModal(null); fetchSuppliers() }}
+        />
+      )}
+
+      {ledgerModal && (
+        <SupplierLedgerModal
+          supplier={ledgerModal}
+          cur={cur}
+          onClose={() => setLedgerModal(null)}
         />
       )}
     </div>

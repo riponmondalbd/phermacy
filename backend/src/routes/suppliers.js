@@ -89,13 +89,20 @@ router.post('/:id/payments', authenticate, asyncHandler(async (req, res) => {
   res.status(201).json(payment);
 }));
 
-// GET /api/suppliers/:id/payments
-router.get('/:id/payments', authenticate, asyncHandler(async (req, res) => {
-  const payments = await prisma.supplierPayment.findMany({
-    where: { supplierId: req.params.id },
-    orderBy: { paymentDate: 'desc' }
-  });
-  res.json(payments);
+// GET /api/suppliers/:id/ledger
+router.get('/:id/ledger', authenticate, asyncHandler(async (req, res) => {
+  const [purchases, payments] = await Promise.all([
+    prisma.purchase.findMany({
+      where: { supplierId: req.params.id },
+      orderBy: { purchaseDate: 'desc' },
+      include: { items: { include: { product: true } } }
+    }),
+    prisma.supplierPayment.findMany({
+      where: { supplierId: req.params.id },
+      orderBy: { paymentDate: 'desc' }
+    })
+  ]);
+  res.json({ purchases, payments });
 }));
 
 module.exports = router;
