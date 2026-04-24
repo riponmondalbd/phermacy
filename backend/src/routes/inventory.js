@@ -57,8 +57,23 @@ router.post('/adjust', authenticate, authorize('ADMIN', 'MANAGER'), asyncHandler
       data: { productId, userId: req.user.id, type, quantity: qty, reason, notes }
     });
 
-    // Apply to specific batch if provided
-    if (batchId) {
+    if (type === 'ADD_BATCH') {
+      // Create a brand new batch
+      const expiryDate = req.body.expiryDate;
+      const batchNumber = expiryDate ? expiryDate.replace(/-/g, '') : `B${Date.now()}`;
+      
+      await tx.batch.create({
+        data: {
+          productId,
+          batchNumber,
+          expiryDate: new Date(expiryDate),
+          quantity: qty,
+          initialQty: qty,
+          purchasePrice: parseFloat(req.body.purchasePrice) || 0
+        }
+      });
+    } else if (batchId) {
+      // Apply to specific existing batch
       const batch = await tx.batch.findUnique({ where: { id: batchId } });
       if (!batch) throw Object.assign(new Error('Batch not found'), { status: 404 });
       const newQty = batch.quantity + qty;

@@ -16,6 +16,8 @@ export default function AdjustmentModal({ onClose, onSave, prefill = null }) {
   const [batches, setBatches] = useState([])
   const [loadingProducts, setLoadingProducts] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [selectedBatch, setSelectedBatch] = useState(null)
+  const [newTotal, setNewTotal] = useState('')
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -33,21 +35,36 @@ export default function AdjustmentModal({ onClose, onSave, prefill = null }) {
       if (p) {
         setBatches(p.batches || [])
       } else {
-        // If not found in memory (e.g. if we are on Products page and didn't load full inventory)
-        // We might need to fetch batches specifically
         api.get(`/products/${form.productId}`).then(r => {
           setBatches(r.data.batches || [])
         })
       }
-    } else setBatches([])
+    } else {
+      setBatches([])
+      setSelectedBatch(null)
+    }
   }, [form.productId, products])
 
+  useEffect(() => {
+    const b = batches.find(x => x.id === form.batchId)
+    setSelectedBatch(b || null)
+  }, [form.batchId, batches])
+
   const handleSave = async () => {
-    if (!form.productId || !form.quantity || !form.reason) return toast.error('Required fields missing')
-    if (form.quantity !== '0' && !form.batchId) return toast.error('Please select a specific batch for quantity adjustment')
+    let finalQty = parseFloat(form.quantity)
+    
+    // If user provided a "New Total", calculate the adjustment
+    if (newTotal !== '' && selectedBatch) {
+      finalQty = parseFloat(newTotal) - selectedBatch.quantity
+    }
+
+    if (!form.productId || isNaN(finalQty) || !form.reason) return toast.error('Required fields missing')
+    if (form.type !== 'ADD_BATCH' && finalQty !== 0 && !form.batchId) return toast.error('Please select a specific batch')
+    if (form.type === 'ADD_BATCH' && !form.expiryDate) return toast.error('Expiry date required for new batch')
+    
     setSaving(true)
     try {
-      await api.post('/inventory/adjust', form)
+      await api.post('/inventory/adjust', { ...form, quantity: finalQty })
       toast.success('Stock adjusted')
       onSave()
     } finally { setSaving(false) }
@@ -68,37 +85,90 @@ export default function AdjustmentModal({ onClose, onSave, prefill = null }) {
               {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
           </div>
+
           <div className="form-group">
-            <label className="label">Select Batch *</label>
-            <select className="select" value={form.batchId} onChange={e => setForm({...form, batchId: e.target.value})} disabled={!!prefill?.batchId}>
-              <option value="">Choose Batch</option>
-              {batches.map(b => <option key={b.id} value={b.id}>{b.batchNumber} (Stock: {b.quantity})</option>)}
-              {batches.length === 0 && <option value="" disabled>No active batches found</option>}
+            <label className="label">Adjustment Type</label>
+            <select className="select" value={form.type} onChange={e => setForm({...form, type: e.target.value, batchId: '', expiryDate: ''})}>
+              <option value="CORRECTION">Update Existing Batch (Correction)</option>
+              <option value="ADD_BATCH">Add New Batch (New Expiry)</option>
+              <option value="DAMAGE">Damage (Remove Stock)</option>
+              <option value="EXPIRED">Expired (Remove Stock)</option>
             </select>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+
+          {form.type !== 'ADD_BATCH' && (
             <div className="form-group">
-              <label className="label">Adjustment Type</label>
-              <select className="select" value={form.type} onChange={e => setForm({...form, type: e.target.value})}>
-                <option value="CORRECTION">Correction</option>
-                <option value="DAMAGE">Damage</option>
-                <option value="EXPIRED">Expired</option>
-                <option value="OTHER">Other</option>
+              <label className="label">Select Batch *</label>
+              <select className="select" value={form.batchId} onChange={e => setForm({...form, batchId: e.target.value})} disabled={!!prefill?.batchId}>
+                <option value="">Choose Batch</option>
+                {batches.map(b => <option key={b.id} value={b.id}>{b.batchNumber} (Stock: {b.quantity})</option>)}
               </select>
             </div>
-            <div className="form-group">
-              <label className="label">Quantity Change (+/-) *</label>
-              <input type="number" className="input" value={form.quantity} onChange={e => setForm({...form, quantity: e.target.value})} placeholder="e.g. -5 or 10" />
+          )}
+
+          {selectedBatch && form.type !== 'ADD_BATCH' && (
+            <div className="grid grid-cols-2 gap-3 p-3 bg-[#21263a] rounded-lg border border-[#2a2f45]">
+              <div>
+                <div className="text-[10px] text-[#94a3b8] uppercase font-bold">Expiry Date</div>
+                <div className="text-xs text-white">{new Date(selectedBatch.expiryDate).toLocaleDateString()}</div>
+              </div>
+              <div>
+                <div className="text-[10px] text-[#94a3b8] uppercase font-bold">Current Stock</div>
+                <div className="text-xs text-brand-400 font-bold">{selectedBatch.quantity} units</div>
+              </div>
             </div>
-          </div>
+          )}
+
+          {form.type === 'ADD_BATCH' && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="form-group">
+                <label className="label">New Expiry Date *</label>
+                <input type="date" className="input" value={form.expiryDate || ''} onChange={e => setForm({...form, expiryDate: e.target.value})} />
+              </div>
+              <div className="form-group">
+                <label className="label">Quantity to Add *</label>
+                <input type="number" className="input" value={form.quantity} onChange={e => setForm({...form, quantity: e.target.value})} placeholder="0" />
+              </div>
+            </div>
+          )}
+
+          {form.type !== 'ADD_BATCH' && (
+            <>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="form-group">
+                  <label className="label">New Total Quantity</label>
+                  <input 
+                    type="number" 
+                    className="input border-brand-500/30 focus:border-brand-500" 
+                    value={newTotal} 
+                    onChange={e => { setNewTotal(e.target.value); setForm({...form, quantity: ''}) }} 
+                    placeholder={`Current: ${selectedBatch?.quantity || 0}`} 
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="label">Adjustment (+/- Qty)</label>
+                  <input 
+                    type="number" 
+                    className="input" 
+                    value={form.quantity} 
+                    onChange={e => { setForm({...form, quantity: e.target.value}); setNewTotal('') }} 
+                    placeholder="+10 or -5" 
+                  />
+                </div>
+              </div>
+            </>
+          )}
+
           <div className="form-group">
             <label className="label">Reason *</label>
-            <input className="input" value={form.reason} onChange={e => setForm({...form, reason: e.target.value})} placeholder="e.g. Found damaged in storage" />
+            <input className="input" value={form.reason} onChange={e => setForm({...form, reason: e.target.value})} placeholder="e.g. Fresh stock received" />
           </div>
         </div>
         <div className="modal-footer">
           <button onClick={onClose} className="btn-secondary">Cancel</button>
-          <button onClick={handleSave} disabled={saving || (loadingProducts && !prefill)} className="btn-primary">Adjust Stock</button>
+          <button onClick={handleSave} disabled={saving || (loadingProducts && !prefill)} className="btn-primary">
+            {form.type === 'ADD_BATCH' ? 'Add New Stock' : 'Update Stock'}
+          </button>
         </div>
       </div>
     </div>
