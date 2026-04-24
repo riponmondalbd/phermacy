@@ -7,9 +7,16 @@ import clsx from 'clsx'
 import { format } from 'date-fns'
 import toast from 'react-hot-toast'
 
-function AdjustmentModal({ onClose, onSave }) {
+function AdjustmentModal({ onClose, onSave, prefill = null }) {
   const [products, setProducts] = useState([])
-  const [form, setForm] = useState({ productId: '', batchId: '', type: 'CORRECTION', quantity: '', reason: '', notes: '' })
+  const [form, setForm] = useState({ 
+    productId: prefill?.productId || '', 
+    batchId: prefill?.batchId || '', 
+    type: prefill?.type || 'CORRECTION', 
+    quantity: '', 
+    reason: '', 
+    notes: '' 
+  })
   const [batches, setBatches] = useState([])
   const [loadingProducts, setLoadingProducts] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -98,7 +105,7 @@ export default function InventoryPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [tab, setTab] = useState('stock') // stock | expired | adjustments
-  const [modal, setModal] = useState(false)
+  const [modal, setModal] = useState(null) // null | { productId, batchId, type }
   const { settings } = useSettingsStore()
   const { isManager } = useAuthStore()
   const cur = settings.currency || '৳'
@@ -139,7 +146,7 @@ export default function InventoryPage() {
           <p className="page-subtitle">Batch tracking and stock control</p>
         </div>
         {isManager() && (
-          <button onClick={() => setModal(true)} className="btn-primary">
+          <button onClick={() => setModal({})} className="btn-primary">
             <ArrowUpDown size={16} /> Adjust Stock
           </button>
         )}
@@ -177,6 +184,7 @@ export default function InventoryPage() {
                   <th>Expiry Date</th>
                   <th>Remaining Qty</th>
                   <th>Status</th>
+                  <th>Actions</th>
                 </tr>
               )}
               {tab === 'adjustments' && (
@@ -235,6 +243,19 @@ export default function InventoryPage() {
                       <td>
                         {new Date(item?.expiryDate) < new Date() ? <span className="badge-red">Expired</span> : <span className="badge-yellow">Expiring Soon</span>}
                       </td>
+                      <td>
+                        <button 
+                          onClick={() => setModal({ 
+                            productId: item.productId, 
+                            batchId: item.id, 
+                            type: new Date(item?.expiryDate) < new Date() ? 'EXPIRED' : 'CORRECTION' 
+                          })} 
+                          className="btn-ghost btn-icon text-brand-400" 
+                          title="Adjust Stock"
+                        >
+                          <ArrowUpDown size={14} />
+                        </button>
+                      </td>
                     </>
                   )}
                   {tab === 'adjustments' && (
@@ -258,8 +279,9 @@ export default function InventoryPage() {
 
       {modal && (
         <AdjustmentModal
-          onClose={() => setModal(false)}
-          onSave={() => { setModal(false); fetchData() }}
+          prefill={modal.productId ? modal : null}
+          onClose={() => setModal(null)}
+          onSave={() => { setModal(null); fetchData() }}
         />
       )}
     </div>
