@@ -1,13 +1,13 @@
-import { useState, useEffect } from 'react'
-import api from '../../api/client'
-import { Search, AlertTriangle, Clock, History, ArrowUpDown, X, Check, Package } from 'lucide-react'
-import { useSettingsStore } from '../../store/settingsStore'
-import { useAuthStore } from '../../store/authStore'
 import clsx from 'clsx'
 import { format } from 'date-fns'
-import toast from 'react-hot-toast'
 import jsPDF from 'jspdf'
 import 'jspdf-autotable'
+import { ArrowUpDown, Check, Package, Search } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import toast from 'react-hot-toast'
+import api from '../../api/client'
+import { useAuthStore } from '../../store/authStore'
+import { useSettingsStore } from '../../store/settingsStore'
 
 import AdjustmentModal from '../../components/AdjustmentModal'
 
@@ -34,15 +34,28 @@ export default function InventoryPage() {
         if (expiryFilter === 'stock') {
           // For out of stock, we look at items with 0 stock
           const { data } = await api.get('/inventory/stock')
-          setData(data.filter(p => (p.totalStock ?? 0) <= 0))
+          const oosProducts = data.filter(p => (p.totalStock ?? 0) <= 0)
+          const flattened = []
+          oosProducts.forEach(p => {
+            if (p.batches?.length > 0) p.batches.forEach(b => flattened.push({ ...b, product: p }))
+            else flattened.push({ product: p, batchNumber: 'N/A', expiryDate: null, quantity: 0 })
+          })
+          setData(flattened)
         } else if (expiryFilter === 'low') {
           // For low stock, we look at items below minStockLevel but > 0
           const { data } = await api.get('/inventory/stock')
-          setData(data.filter(p => {
+          const lowProducts = data.filter(p => {
             const stock = p.totalStock ?? 0
             const min = p.minStockLevel ?? 0
             return stock > 0 && stock <= min
-          }))
+          })
+          
+          const flattened = []
+          lowProducts.forEach(p => {
+            if (p.batches?.length > 0) p.batches.forEach(b => flattened.push({ ...b, product: p }))
+            else flattened.push({ product: p, batchNumber: 'N/A', expiryDate: null, quantity: p.totalStock })
+          })
+          setData(flattened)
         } else {
           const { data } = await api.get('/inventory/expiry-alerts')
           const combined = [...data.expired, ...data.expiringSoon]
@@ -216,8 +229,8 @@ export default function InventoryPage() {
           <div className="flex p-1 bg-[#1a1d27] border border-[#2a2f45] rounded-xl shrink-0 overflow-x-auto">
             <button onClick={() => setTab('stock')} className={clsx('px-4 py-1.5 text-sm font-medium rounded-lg transition-all whitespace-nowrap', tab === 'stock' ? 'bg-brand-600 text-white shadow-lg' : 'text-[#94a3b8] hover:text-white')}>Stock Level</button>
             <button onClick={() => setTab('expired')} className={clsx('px-4 py-1.5 text-sm font-medium rounded-lg transition-all whitespace-nowrap', tab === 'expired' ? 'bg-red-600 text-white shadow-lg' : 'text-[#94a3b8] hover:text-white')}>Expiry Alerts</button>
-            <button onClick={() => setTab('adjustments')} className={clsx('px-4 py-1.5 text-sm font-medium rounded-lg transition-all whitespace-nowrap', tab === 'adjustments' ? 'bg-brand-600 text-white shadow-lg' : 'text-[#94a3b8] hover:text-white')}>Logs</button>
             <button onClick={() => setTab('restock')} className={clsx('px-4 py-1.5 text-sm font-medium rounded-lg transition-all whitespace-nowrap', tab === 'restock' ? 'bg-orange-600 text-white shadow-lg' : 'text-[#94a3b8] hover:text-white')}>Restock</button>
+            <button onClick={() => setTab('adjustments')} className={clsx('px-4 py-1.5 text-sm font-medium rounded-lg transition-all whitespace-nowrap', tab === 'adjustments' ? 'bg-brand-600 text-white shadow-lg' : 'text-[#94a3b8] hover:text-white')}>Logs</button>
           </div>
           <div className="relative flex-1 max-w-md">
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#475569]" />
@@ -252,6 +265,8 @@ export default function InventoryPage() {
                 <tr>
                   <th className="w-10 text-center"><Check size={14} className="mx-auto" /></th>
                   <th>Product</th>
+                  <th>Batch #</th>
+                  <th>Earliest Expiry</th>
                   <th>Current Stock</th>
                   <th className="w-24">Unit</th>
                   <th className="w-24">Restock Qty</th>
@@ -261,8 +276,12 @@ export default function InventoryPage() {
               {tab === 'expired' && (
                 <tr>
                   <th>Product</th>
-                  <th>Batch #</th>
-                  <th>Expiry Date</th>
+                  {expiryFilter !== 'stock' && (
+                    <>
+                      <th>Batch #</th>
+                      <th>Expiry Date</th>
+                    </>
+                  )}
                   <th>Remaining Qty</th>
                   <th>Status</th>
                   <th>Actions</th>
@@ -296,13 +315,21 @@ export default function InventoryPage() {
                       <td className="text-[#94a3b8]">{cur}{item?.stockValue?.toFixed(2)}</td>
                       <td className="text-xs">
                         <div className="flex flex-col gap-1">
-                          {item?.batches?.slice(0, 2).map(b => (
-                            <div key={b.id} className="bg-[#21263a] px-2 py-0.5 rounded text-[10px] flex justify-between">
-                              <span>{b.batchNumber}</span>
-                              <span className="font-bold">{b.quantity}</span>
+                          {item?.batches?.slice(0, 3).map(b => (
+                            <div key={b.id} className="bg-[#21263a] px-2 py-1 rounded text-[10px] border border-[#2a2f45] flex flex-col gap-0.5">
+                              <div className="flex justify-between items-center">
+                                <span className="text-[#94a3b8]">Batch: <span className="text-white font-mono">{b.batchNumber}</span></span>
+                                <span className={clsx("font-bold px-1 rounded bg-[#0f1117]", b.quantity <= 10 ? 'text-red-400' : 'text-green-400')}>{b.quantity}</span>
+                              </div>
+                              <div className="flex justify-between items-center text-[9px]">
+                                <span className="text-[#475569]">Expiry:</span>
+                                <span className={clsx(new Date(b.expiryDate) < new Date() ? 'text-red-400' : 'text-white')}>
+                                  {format(new Date(b.expiryDate), 'MMM yyyy')}
+                                </span>
+                              </div>
                             </div>
                           ))}
-                          {item?.batches?.length > 2 && <span className="text-[10px] text-brand-400">+{item.batches.length - 2} more batches</span>}
+                          {item?.batches?.length > 3 && <span className="text-[10px] text-brand-400 mt-1">+{item.batches.length - 3} more batches...</span>}
                         </div>
                       </td>
                       <td>
@@ -330,6 +357,16 @@ export default function InventoryPage() {
                       <td>
                         <div className="font-medium text-[#e2e8f0]">{item?.name}</div>
                         <div className="text-[10px] text-[#94a3b8]">{item?.category?.name}</div>
+                      </td>
+                      <td className="text-xs font-mono">
+                        {item?.batches?.[0]?.batchNumber || <span className="text-[#475569]">N/A</span>}
+                      </td>
+                      <td className="text-xs">
+                        {item?.batches?.[0]?.expiryDate ? (
+                          <span className={clsx(new Date(item.batches[0].expiryDate) < new Date() ? 'text-red-400' : 'text-[#94a3b8]')}>
+                            {format(new Date(item.batches[0].expiryDate), 'MMM yyyy')}
+                          </span>
+                        ) : '—'}
                       </td>
                       <td className={clsx('font-bold', item.totalStock <= item.minStockLevel ? 'text-red-400' : 'text-white')}>
                         {item.totalStock} {item.unit}s
@@ -364,32 +401,28 @@ export default function InventoryPage() {
                   )}
                   {tab === 'expired' && (
                     <>
-                      {expiryFilter === 'stock' || expiryFilter === 'low' ? (
+                      <td>
+                        <div className="font-medium text-[#e2e8f0]">{item?.product?.name || item?.name}</div>
+                        <div className="text-[10px] text-[#94a3b8]">{item?.product?.category?.name || item?.category?.name}</div>
+                      </td>
+                      {expiryFilter !== 'stock' && (
                         <>
-                          <td>
-                            <div className="font-medium text-[#e2e8f0]">{item?.name}</div>
-                            <div className="text-[10px] text-[#94a3b8]">{item?.category?.name}</div>
-                          </td>
-                          <td className="text-xs text-[#475569]">N/A (Product)</td>
-                          <td className="text-xs text-[#475569]">N/A</td>
-                          <td className="font-bold">{item?.totalStock}</td>
-                          <td>
-                            {item?.totalStock <= 0 ? <span className="badge-red">Out of Stock</span> : <span className="badge-yellow">Low Stock</span>}
-                          </td>
-                        </>
-                      ) : (
-                        <>
-                          <td>{item?.product?.name}</td>
-                          <td className="font-mono text-xs">{item?.batchNumber}</td>
-                          <td className={clsx('font-medium', new Date(item?.expiryDate) < new Date() ? 'text-red-400' : 'text-yellow-400')}>
-                            {item?.expiryDate ? format(new Date(item.expiryDate), 'MMM d, yyyy') : '—'}
-                          </td>
-                          <td>{item?.quantity}</td>
-                          <td>
-                            {new Date(item?.expiryDate) < new Date() ? <span className="badge-red">Date Expired</span> : <span className="badge-yellow">Expiring Soon</span>}
+                          <td className="font-mono text-xs">{item?.batchNumber || '—'}</td>
+                          <td className={clsx('font-medium', item?.expiryDate && new Date(item.expiryDate) < new Date() ? 'text-red-400' : 'text-yellow-400')}>
+                            {item?.expiryDate ? format(new Date(item.expiryDate), 'MMM d, yyyy') : <span className="text-[#475569]">N/A</span>}
                           </td>
                         </>
                       )}
+                      <td className="font-bold">{item?.quantity ?? item?.totalStock}</td>
+                      <td>
+                        {item?.expiryDate && new Date(item.expiryDate) < new Date() ? (
+                          <span className="badge-red">Date Expired</span>
+                        ) : (item?.quantity ?? item?.totalStock) <= 0 ? (
+                          <span className="badge-red">Out of Stock</span>
+                        ) : (
+                          <span className="badge-yellow">Low Stock</span>
+                        )}
+                      </td>
                       <td>
                         <button 
                           onClick={() => setModal({ 
