@@ -34,8 +34,35 @@ router.get('/', authenticate, asyncHandler(async (req, res) => {
       include: { customer: { select: { name: true } }, user: { select: { name: true } } }
     }),
     prisma.saleItem.groupBy({
-      by: ['productId'], _sum: { quantity: true, profit: true },
-      orderBy: { _sum: { quantity: 'desc' } }, take: 5
+      by: ['productId'], 
+      _sum: { quantity: true, profit: true },
+      orderBy: { _sum: { quantity: 'desc' } }, 
+      take: 5
+    }).then(async tops => {
+      // Subtract returns for these top products
+      const enriched = await Promise.all(tops.map(async t => {
+        const returns = await prisma.returnItem.aggregate({
+          where: { productId: t.productId },
+          _sum: { quantity: true, totalPrice: true }
+        });
+        
+        const retQty = returns._sum.quantity || 0;
+        const retTotal = returns._sum.totalPrice || 0;
+        
+        // Find cost price to calculate lost profit from returns
+        const saleItem = await prisma.saleItem.findFirst({ where: { productId: t.productId }, select: { costPrice: true } });
+        const costPrice = saleItem?.costPrice || 0;
+        const lostProfit = retTotal - (costPrice * retQty);
+
+        return {
+          ...t,
+          _sum: {
+            quantity: t._sum.quantity - retQty,
+            profit: t._sum.profit - lostProfit
+          }
+        };
+      }));
+      return enriched;
     })
   ]);
 
@@ -49,7 +76,7 @@ router.get('/', authenticate, asyncHandler(async (req, res) => {
   // Last 7 days chart data
   const last7 = [];
   for (let i = 6; i >= 0; i--) {
-    const d = new Date(today); d.setDate(d.getDate() - i);
+    const d = new Date(today); d.setHours(0,0,0,0); d.setDate(d.getDate() - i);
     const d2 = new Date(d); d2.setDate(d2.getDate() + 1);
     const agg = await prisma.sale.aggregate({
       where: { saleDate: { gte: d, lt: d2 } },

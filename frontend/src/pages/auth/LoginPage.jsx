@@ -63,7 +63,7 @@ export default function LoginPage() {
                 <input
                   type="email"
                   className="input pl-9"
-                  placeholder="admin@pharmacy.com"
+                  placeholder="Enter Your Email"
                   value={form.email}
                   onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
                   required
@@ -78,7 +78,7 @@ export default function LoginPage() {
                 <input
                   type={showPass ? 'text' : 'password'}
                   className="input pl-9 pr-9"
-                  placeholder="••••••••"
+                  placeholder="Enter Your Password"
                   value={form.password}
                   onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
                   required

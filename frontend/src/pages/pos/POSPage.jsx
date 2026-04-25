@@ -237,6 +237,13 @@ export default function POSPage() {
 
   const handleSubmit = async () => {
     if (cartItems.length === 0) return toast.error('Cart is empty')
+    
+    // Validate: No due for anonymous walk-in customers
+    if (!customer?.id && !customerSearch.trim() && due > 0) {
+      setSubmitting(false)
+      return toast.error('Credit/Due is not allowed for anonymous walk-in customers. Please select a customer or enter a name.')
+    }
+
     setSubmitting(true)
     try {
       const payload = {
@@ -411,8 +418,11 @@ export default function POSPage() {
               <option value="cash">Cash</option>
               <option value="card">Card</option>
               <option value="mobile">Mobile Banking</option>
-              <option value="due">Due</option>
+              <option value="due" disabled={!customer && !customerSearch.trim()}>Due {(!customer && !customerSearch.trim()) ? '(Enter Customer Name)' : ''}</option>
             </select>
+            {!customer && !customerSearch.trim() && paymentMethod === 'due' && (
+              <p className="text-[10px] text-red-400 mt-1 font-medium">Due is only allowed for named or registered customers.</p>
+            )}
           </div>
           <div>
             <label className="label">Amount Paid</label>

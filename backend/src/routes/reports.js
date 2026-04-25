@@ -18,13 +18,27 @@ router.get('/sales', authenticate, asyncHandler(async (req, res) => {
 
   const sales = await prisma.sale.findMany({
     where,
-    include: { items: true, customer: { select: { name: true } }, user: { select: { name: true } } },
+    include: { 
+      items: true, 
+      returns: { include: { items: true } },
+      customer: { select: { name: true } }, 
+      user: { select: { name: true } } 
+    },
     orderBy: { saleDate: 'asc' }
   });
 
   const totalRevenue = sales.reduce((s, sale) => s + sale.totalAmount, 0);
-  const totalProfit = sales.reduce((s, sale) =>
-    s + sale.items.reduce((sp, item) => sp + item.profit, 0), 0);
+  const totalProfit = sales.reduce((s, sale) => {
+    const grossProfit = sale.items.reduce((sp, item) => sp + item.profit, 0);
+    const returnLoss = sale.returns.reduce((rp, ret) => 
+      rp + ret.items.reduce((rip, ri) => {
+        // Find corresponding sale item to get cost price
+        const saleItem = sale.items.find(si => si.batchId === ri.batchId && si.productId === ri.productId);
+        const costPrice = saleItem ? saleItem.costPrice : 0;
+        return rip + (ri.totalPrice - (costPrice * ri.quantity));
+      }, 0), 0);
+    return s + (grossProfit - returnLoss);
+  }, 0);
   const totalDiscount = sales.reduce((s, sale) => s + sale.discount, 0);
   const totalDue = sales.reduce((s, sale) => s + sale.dueAmount, 0);
 
@@ -34,7 +48,16 @@ router.get('/sales', authenticate, asyncHandler(async (req, res) => {
     const day = new Date(sale.saleDate).toISOString().split('T')[0];
     if (!dailyMap[day]) dailyMap[day] = { date: day, revenue: 0, profit: 0, count: 0 };
     dailyMap[day].revenue += sale.totalAmount;
-    dailyMap[day].profit += sale.items.reduce((s, i) => s + i.profit, 0);
+    
+    const grossProfit = sale.items.reduce((sp, item) => sp + item.profit, 0);
+    const returnLoss = sale.returns.reduce((rp, ret) => 
+      rp + ret.items.reduce((rip, ri) => {
+        const saleItem = sale.items.find(si => si.batchId === ri.batchId && si.productId === ri.productId);
+        const costPrice = saleItem ? saleItem.costPrice : 0;
+        return rip + (ri.totalPrice - (costPrice * ri.quantity));
+      }, 0), 0);
+    
+    dailyMap[day].profit += (grossProfit - returnLoss);
     dailyMap[day].count += 1;
   }
 
