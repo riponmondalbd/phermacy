@@ -19,8 +19,8 @@ import UsersPage from './pages/users/UsersPage'
 import { useAuthStore } from './store/authStore'
 
 function PrivateRoute({ children, roles }) {
-  const { token, user } = useAuthStore()
-  if (!token) return <Navigate to="/login" replace />
+  const { user } = useAuthStore()
+  if (!user) return <Navigate to="/login" replace />
   if (roles && !roles.includes(user?.role)) return <Navigate to="/" replace />
   return children
 }
