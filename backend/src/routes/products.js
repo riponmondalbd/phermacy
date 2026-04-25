@@ -1,11 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { PrismaClient } = require('@prisma/client');
 const { body, validationResult, query } = require('express-validator');
 const { authenticate, authorize } = require('../middleware/auth');
 const { asyncHandler } = require('../middleware/errorHandler');
 
-const prisma = new PrismaClient();
+const prisma = require('../utils/prisma');
 
 // GET /api/products?search=&categoryId=&lowStock=&page=&limit=
 router.get('/', authenticate, asyncHandler(async (req, res) => {

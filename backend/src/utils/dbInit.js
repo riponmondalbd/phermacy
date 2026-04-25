@@ -1,8 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 const { logger } = require('./logger');
-
-const prisma = new PrismaClient();
+const prisma = require('./prisma');
 
 async function initDb() {
   try {

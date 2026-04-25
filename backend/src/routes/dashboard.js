@@ -1,10 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const { PrismaClient } = require('@prisma/client');
 const { authenticate } = require('../middleware/auth');
 const { asyncHandler } = require('../middleware/errorHandler');
 
-const prisma = new PrismaClient();
+const prisma = require('../utils/prisma');
 
 // GET /api/dashboard
 router.get('/', authenticate, asyncHandler(async (req, res) => {
@@ -73,17 +72,18 @@ router.get('/', authenticate, asyncHandler(async (req, res) => {
   });
   const nameMap = Object.fromEntries(productNames.map(p => [p.id, p.name]));
 
-  // Last 7 days chart data
-  const last7 = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(today); d.setHours(0,0,0,0); d.setDate(d.getDate() - i);
+  // Optimized Last 7 days chart data - run in parallel
+  const last7Days = await Promise.all(Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(today); d.setDate(d.getDate() - (6 - i));
     const d2 = new Date(d); d2.setDate(d2.getDate() + 1);
-    const agg = await prisma.sale.aggregate({
+    return prisma.sale.aggregate({
       where: { saleDate: { gte: d, lt: d2 } },
       _sum: { totalAmount: true }
-    });
-    last7.push({ date: d.toISOString().split('T')[0], revenue: agg._sum.totalAmount || 0 });
-  }
+    }).then(agg => ({
+      date: d.toISOString().split('T')[0],
+      revenue: agg._sum.totalAmount || 0
+    }));
+  }));
 
   res.json({
     today: {
@@ -102,7 +102,7 @@ router.get('/', authenticate, asyncHandler(async (req, res) => {
       quantity: t._sum.quantity,
       profit: t._sum.profit
     })),
-    salesChart: last7
+    salesChart: last7Days
   });
 }));
 

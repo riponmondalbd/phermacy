@@ -1,10 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const { PrismaClient } = require('@prisma/client');
 const { authenticate, authorize } = require('../middleware/auth');
 const { asyncHandler } = require('../middleware/errorHandler');
-
-const prisma = new PrismaClient();
+const prisma = require('../utils/prisma');
 
 // GET /api/inventory/stock  — all products with current stock levels
 router.get('/stock', authenticate, asyncHandler(async (req, res) => {
