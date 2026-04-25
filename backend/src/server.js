@@ -116,12 +116,15 @@ if (require('fs').existsSync(frontendPath)) {
 // Error handler
 app.use(errorHandler);
 
-// Only start the server if not running as a serverless function
+// Only start the server and jobs if not running as a serverless function
 if (require.main === module) {
   app.listen(PORT, () => {
-    logger.info(`🚀 Pharmacy API running on http://localhost:${PORT}`);
+    console.log(`🚀 Pharmacy API running on http://localhost:${PORT}`);
     scheduleJobs();
   });
+} else {
+  // On Vercel, we don't use the scheduler as it's not supported in serverless
+  console.log('🚀 Serverless function initialized');
 }
 
 module.exports = app;
