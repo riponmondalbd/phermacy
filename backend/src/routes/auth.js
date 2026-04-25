@@ -30,10 +30,11 @@ router.post('/login', [
   await logAction(user.id, 'LOGIN', 'Auth');
 
   // Set cookies
+  const isLocal = req.get('host').includes('localhost');
   const cookieOptions = {
     httpOnly: true,
-    secure: true, // Always true for remote HTTPS (Vercel)
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    secure: !isLocal,
+    sameSite: isLocal ? 'lax' : 'none',
     maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
   };
 
@@ -82,5 +83,19 @@ router.post('/change-password', authenticate, [
   await prisma.user.update({ where: { id: req.user.id }, data: { password: hashed } });
   res.json({ message: 'Password changed successfully' });
 }));
+
+// POST /api/auth/logout
+router.post('/logout', (req, res) => {
+  const isLocal = req.get('host').includes('localhost');
+  const cookieOptions = {
+    httpOnly: true,
+    secure: !isLocal,
+    sameSite: isLocal ? 'lax' : 'none',
+    maxAge: -1
+  };
+  res.clearCookie('token', cookieOptions);
+  res.clearCookie('refreshToken', cookieOptions);
+  res.json({ message: 'Logged out successfully' });
+});
 
 module.exports = router;
