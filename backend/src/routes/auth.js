@@ -17,35 +17,39 @@ router.post('/login', [
   const errors = validationResult(req);
   if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
-  const { email, password } = req.body;
-  const user = await prisma.user.findUnique({ where: { email } });
+  try {
+    const { email, password } = req.body;
+    const user = await prisma.user.findUnique({ where: { email } });
 
-  if (!user || !user.isActive) return res.status(401).json({ error: 'Invalid credentials' });
-  const valid = await bcrypt.compare(password, user.password);
-  if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
+    if (!user || !user.isActive) return res.status(401).json({ error: 'Invalid credentials' });
+    const valid = await bcrypt.compare(password, user.password);
+    if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
 
-  const token = jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '24h' });
-  const refreshToken = jwt.sign({ userId: user.id }, process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '24h' });
+    const refreshToken = jwt.sign({ userId: user.id }, process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
 
-  await logAction(user.id, 'LOGIN', 'Auth');
+    await logAction(user.id, 'LOGIN', 'Auth');
 
-  // Set cookies
-  const isLocal = req.get('host').includes('localhost');
-  const cookieOptions = {
-    httpOnly: true,
-    secure: !isLocal,
-    sameSite: isLocal ? 'lax' : 'none',
-    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-  };
+    // Set cookies
+    const isLocal = req.get('host').includes('localhost');
+    const cookieOptions = {
+      httpOnly: true,
+      secure: !isLocal,
+      sameSite: isLocal ? 'lax' : 'none',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    };
 
-  res.cookie('token', token, { ...cookieOptions, maxAge: 24 * 60 * 60 * 1000 });
-  res.cookie('refreshToken', refreshToken, cookieOptions);
+    res.cookie('token', token, { ...cookieOptions, maxAge: 24 * 60 * 60 * 1000 });
+    res.cookie('refreshToken', refreshToken, cookieOptions);
 
-  res.json({
-    token, // Still sending for frontend compatibility
-    refreshToken,
-    user: { id: user.id, name: user.name, email: user.email, role: user.role }
-  });
+    res.json({
+      token,
+      refreshToken,
+      user: { id: user.id, name: user.name, email: user.email, role: user.role }
+    });
+  } catch (err) {
+    return res.status(500).json({ error: 'Login Error', details: err.message });
+  }
 }));
 
 // POST /api/auth/refresh

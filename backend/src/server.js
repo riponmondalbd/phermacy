@@ -11,7 +11,7 @@ const { errorHandler } = require('./middleware/errorHandler');
 const { scheduleJobs } = require('./utils/scheduler');
 const { initDb } = require('./utils/dbInit');
 
-// Initialize DB manually if needed or via seed script
+// Initialize DB if empty
 // initDb(); // Disabled for serverless performance
 
 // Routes
@@ -34,6 +34,9 @@ const userRoutes = require('./routes/users');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
+
+// Trust Vercel Proxy
+app.set('trust proxy', 1);
 
 // Simple cookie parser middleware
 app.use((req, res, next) => {
