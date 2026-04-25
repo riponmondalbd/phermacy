@@ -33,7 +33,21 @@ const dashboardRoutes = require('./routes/dashboard');
 const userRoutes = require('./routes/users');
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 4000;
+
+// Simple cookie parser middleware
+app.use((req, res, next) => {
+  const list = {};
+  const rc = req.headers.cookie;
+  rc && rc.split(';').forEach(cookie => {
+    const parts = cookie.split('=');
+    const name = parts.shift().trim();
+    const value = decodeURI(parts.join('='));
+    if (name) list[name] = value;
+  });
+  req.cookies = list;
+  next();
+});
 
 // Security middleware
 app.use(helmet({ contentSecurityPolicy: false }));
