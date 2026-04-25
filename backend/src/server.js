@@ -104,12 +104,14 @@ app.get('/api', (req, res) => {
   res.json({ message: 'Pharmacy API is running' });
 });
 
-// Serve static frontend in production
-app.use(express.static(path.join(__dirname, '../../frontend/dist')));
-
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../../frontend/dist/index.html'));
-});
+// Serve static frontend in production if folder exists
+const frontendPath = path.join(__dirname, '../../frontend/dist');
+if (require('fs').existsSync(frontendPath)) {
+  app.use(express.static(frontendPath));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(frontendPath, 'index.html'));
+  });
+}
 
 // Error handler
 app.use(errorHandler);
