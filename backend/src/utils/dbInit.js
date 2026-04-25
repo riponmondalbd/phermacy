@@ -37,8 +37,6 @@ async function initDb() {
     }
   } catch (error) {
     logger.error('❌ Error initializing database:', error);
-  } finally {
-    await prisma.$disconnect();
   }
 }
 

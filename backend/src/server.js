@@ -11,8 +11,8 @@ const { errorHandler } = require('./middleware/errorHandler');
 const { scheduleJobs } = require('./utils/scheduler');
 const { initDb } = require('./utils/dbInit');
 
-// Initialize DB if empty
-initDb();
+// Initialize DB manually if needed or via seed script
+// initDb(); // Disabled for serverless performance
 
 // Routes
 const authRoutes = require('./routes/auth');
