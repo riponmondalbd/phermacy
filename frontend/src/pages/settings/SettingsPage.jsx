@@ -36,27 +36,27 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6 animate-fade-in pb-10">
-      <div className="page-header">
+      <div className="page-header items-start sm:items-center">
         <div>
           <h1 className="page-title">System Settings</h1>
           <p className="page-subtitle">Configure shop details and application behavior</p>
         </div>
-        <button onClick={handleSave} disabled={saving} className="btn-primary px-8">
+        <button onClick={handleSave} disabled={saving} className="btn-primary w-full sm:w-auto px-8">
           {saving ? <span className="spinner w-4 h-4 mr-2" /> : <Save size={16} className="mr-2" />}
           Save Changes
         </button>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6">
-        <aside className="lg:w-64 shrink-0 space-y-1">
+        <aside className="flex overflow-x-auto lg:flex-col lg:w-64 shrink-0 gap-1 pb-2 lg:pb-0 scrollbar-hide">
           {[
-            { id: 'general', label: 'General Shop', icon: Store },
-            { id: 'financial', label: 'Financials', icon: DollarSign },
-            { id: 'notifications', label: 'Email Reports', icon: Mail },
+            { id: 'general', label: 'Shop', icon: Store },
+            { id: 'financial', label: 'Finance', icon: DollarSign },
+            { id: 'notifications', label: 'Email', icon: Mail },
             { id: 'security', label: 'Security', icon: Shield },
           ].map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-              className={clsx('w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all', 
+              className={clsx('whitespace-nowrap flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all shrink-0', 
                 activeTab === tab.id ? 'bg-brand-600/10 text-brand-400 border border-brand-600/20' : 'text-[#94a3b8] hover:bg-[#21263a] hover:text-[#e2e8f0]')}>
               <tab.icon size={18} /> {tab.label}
             </button>
@@ -67,7 +67,7 @@ export default function SettingsPage() {
           {activeTab === 'general' && (
             <SettingsSection title="Store Information" icon={Store}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="form-group col-span-2">
+                <div className="form-group md:col-span-2">
                   <label className="label">Shop Name</label>
                   <input className="input" value={form.shopName || ''} onChange={e => update('shopName', e.target.value)} />
                 </div>
@@ -79,11 +79,11 @@ export default function SettingsPage() {
                   <label className="label">Email Address</label>
                   <input className="input" value={form.shopEmail || ''} onChange={e => update('shopEmail', e.target.value)} />
                 </div>
-                <div className="form-group col-span-2">
+                <div className="form-group md:col-span-2">
                   <label className="label">Address</label>
                   <textarea className="input h-20 resize-none" value={form.shopAddress || ''} onChange={e => update('shopAddress', e.target.value)} />
                 </div>
-                <div className="form-group col-span-2">
+                <div className="form-group md:col-span-2">
                   <label className="label">Invoice Footer Note</label>
                   <input className="input" value={form.invoiceFooter || ''} onChange={e => update('invoiceFooter', e.target.value)} />
                 </div>

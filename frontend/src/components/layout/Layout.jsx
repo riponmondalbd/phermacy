@@ -126,15 +126,21 @@ export default function Layout() {
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         {/* Topbar */}
         <header className="h-14 bg-[#1a1d27] border-b border-[#2a2f45] flex items-center justify-between px-4 shrink-0">
-          <button
-            className="lg:hidden btn-ghost btn-icon"
-            onClick={() => setMobileOpen(!mobileOpen)}
-          >
-            <Menu size={18} />
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              className="lg:hidden btn-ghost btn-icon"
+              onClick={() => setMobileOpen(!mobileOpen)}
+            >
+              <Menu size={18} />
+            </button>
+            <div className="lg:hidden flex items-center gap-2">
+              <PillIcon size={16} className="text-brand-400" />
+              <span className="font-bold text-white text-sm">PharmaCare</span>
+            </div>
+          </div>
           <div className="flex items-center gap-2 ml-auto">
-            <span className="text-xs text-[#94a3b8] hidden sm:block">
-              {new Date().toLocaleDateString('en-BD', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}
+            <span className="text-[10px] sm:text-xs text-[#94a3b8]">
+              {new Date().toLocaleDateString('en-BD', { weekday: 'short', month: 'short', day: 'numeric' })}
             </span>
           </div>
         </header>

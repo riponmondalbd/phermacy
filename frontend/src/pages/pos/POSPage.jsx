@@ -273,7 +273,7 @@ export default function POSPage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-3.5rem-3rem)] gap-4 animate-fade-in">
+    <div className="flex flex-col lg:flex-row h-auto lg:h-[calc(100vh-3.5rem-3rem)] gap-4 animate-fade-in overflow-y-auto lg:overflow-hidden pb-10 lg:pb-0">
       {/* Left: Product search + grid */}
       <div className="flex-1 flex flex-col gap-4 min-w-0">
         <div className="page-header mb-0">
@@ -332,7 +332,7 @@ export default function POSPage() {
       </div>
 
       {/* Right: Cart */}
-      <div className="w-80 shrink-0 flex flex-col gap-3">
+      <div className="w-full lg:w-80 shrink-0 flex flex-col gap-3">
         {/* Customer selector */}
         <div className="card p-3">
           <div className="text-xs text-[#94a3b8] mb-1.5 font-medium flex items-center gap-1.5">
