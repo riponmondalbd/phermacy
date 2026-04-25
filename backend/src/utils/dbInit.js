@@ -11,14 +11,16 @@ async function initDb() {
       logger.info('🌱 No users found. Seeding initial data...');
       
       // Users
-      const adminPass = await bcrypt.hash('admin123', 10);
+      const adminEmail = process.env.ADMIN_EMAIL || 'admin@system.local';
+      const adminPass = await bcrypt.hash(process.env.ADMIN_PASSWORD || 'admin123', 10);
       await prisma.user.create({
-        data: { name: 'Admin User', email: 'admin@pharmacy.com', password: adminPass, role: 'ADMIN' }
+        data: { name: 'Admin User', email: adminEmail, password: adminPass, role: 'ADMIN' }
       });
       
-      const cashierPass = await bcrypt.hash('cashier123', 10);
+      const cashierEmail = process.env.CASHIER_EMAIL || 'cashier@system.local';
+      const cashierPass = await bcrypt.hash(process.env.CASHIER_PASSWORD || 'cashier123', 10);
       await prisma.user.create({
-        data: { name: 'John Cashier', email: 'cashier@pharmacy.com', password: cashierPass, role: 'CASHIER' }
+        data: { name: 'John Cashier', email: cashierEmail, password: cashierPass, role: 'CASHIER' }
       });
 
       // Basic Settings
