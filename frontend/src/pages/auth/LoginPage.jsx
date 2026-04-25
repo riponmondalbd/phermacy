@@ -1,16 +1,16 @@
+import { Eye, EyeOff, Lock, Mail, PillIcon } from 'lucide-react'
 import { useState } from 'react'
+import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
+import api from '../../api/client'
 import { useAuthStore } from '../../store/authStore'
 import { useSettingsStore } from '../../store/settingsStore'
-import api from '../../api/client'
-import toast from 'react-hot-toast'
-import { PillIcon, Eye, EyeOff, Lock, Mail } from 'lucide-react'
 
 export default function LoginPage() {
   const navigate = useNavigate()
   const { setAuth } = useAuthStore()
   const { setSettings } = useSettingsStore()
-  const [form, setForm] = useState({ email: 'admin@pharmacy.com', password: 'admin123' })
+  const [form, setForm] = useState({ email: import.meta.env.VITE_ADMIN_EMAIL || '', password: import.meta.env.VITE_ADMIN_PASSWORD || '' })
   const [showPass, setShowPass] = useState(false)
   const [loading, setLoading] = useState(false)
 
@@ -94,12 +94,6 @@ export default function LoginPage() {
               {loading ? <span className="spinner w-4 h-4" /> : 'Sign In'}
             </button>
           </form>
-
-          <div className="mt-4 p-3 bg-[#21263a] rounded-lg text-xs text-[#94a3b8]">
-            <div className="font-medium text-[#e2e8f0] mb-1">Demo Credentials</div>
-            <div>Admin: admin@pharmacy.com / admin123</div>
-            <div>Cashier: cashier@pharmacy.com / cashier123</div>
-          </div>
         </div>
       </div>
     </div>

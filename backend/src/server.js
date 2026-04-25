@@ -79,6 +79,13 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Serve static frontend in production
+app.use(express.static(path.join(__dirname, '../../frontend/dist')));
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../../frontend/dist/index.html'));
+});
+
 // Error handler
 app.use(errorHandler);
 
