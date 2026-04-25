@@ -16,9 +16,9 @@ router.get('/', authenticate, asyncHandler(async (req, res) => {
   if (categoryId) where.categoryId = categoryId;
   if (search) {
     where.OR = [
-      { name: { contains: search } },
-      { genericName: { contains: search } },
-      { barcode: { contains: search } }
+      { name: { contains: search, mode: 'insensitive' } },
+      { genericName: { contains: search, mode: 'insensitive' } },
+      { barcode: { contains: search, mode: 'insensitive' } }
     ];
   }
 
@@ -76,9 +76,9 @@ router.get('/search/pos', authenticate, asyncHandler(async (req, res) => {
     where: {
       isActive: true,
       OR: [
-        { name: { contains: q } },
-        { genericName: { contains: q } },
-        { barcode: { contains: q } }
+        { name: { contains: q, mode: 'insensitive' } },
+        { genericName: { contains: q, mode: 'insensitive' } },
+        { barcode: { contains: q, mode: 'insensitive' } }
       ]
     },
     include: {

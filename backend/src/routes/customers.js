@@ -9,9 +9,9 @@ router.get('/', authenticate, asyncHandler(async (req, res) => {
   const { search, page = 1, limit = 50 } = req.query;
   const where = { isActive: true };
   if (search) where.OR = [
-    { name: { contains: search } },
-    { phone: { contains: search } },
-    { email: { contains: search } }
+    { name: { contains: search, mode: 'insensitive' } },
+    { phone: { contains: search, mode: 'insensitive' } },
+    { email: { contains: search, mode: 'insensitive' } }
   ];
   const [customers, total] = await Promise.all([
     prisma.customer.findMany({
