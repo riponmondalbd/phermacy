@@ -136,7 +136,7 @@ export default function POSPage() {
   const printInvoice = useCallback((sale) => {
     const doc = new jsPDF({ format: 'a4' })
     const pageW = doc.internal.pageSize.width
-    const cur = settings.currency || '৳'
+    const pdfCur = (settings.currency === '৳' || !settings.currency) ? 'Tk.' : settings.currency;
     
     // Header
     doc.setFont('helvetica', 'bold')
@@ -183,8 +183,8 @@ export default function POSPage() {
         { content: item.product.name, styles: { fontStyle: 'bold' } },
         item.batch?.batchNumber || '-',
         item.quantity,
-        `${cur}${item.unitPrice.toFixed(2)}`,
-        `${cur}${item.totalPrice.toFixed(2)}`
+        `${pdfCur}${item.unitPrice.toFixed(2)}`,
+        `${pdfCur}${item.totalPrice.toFixed(2)}`
       ]),
       styles: { fontSize: 9, cellPadding: 4, textColor: 50 },
       headStyles: { fillColor: [31, 152, 112], textColor: 255, fontSize: 10, fontStyle: 'bold' },
@@ -199,30 +199,30 @@ export default function POSPage() {
     doc.setFontSize(10)
     doc.setTextColor(100)
     doc.text('Subtotal:', totalX - 35, finalY)
-    doc.text(`${cur}${sale.subtotal.toFixed(2)}`, totalX, finalY, { align: 'right' })
+    doc.text(`${pdfCur}${sale.subtotal.toFixed(2)}`, totalX, finalY, { align: 'right' })
     
     if (sale.discount > 0) {
       doc.text('Discount:', totalX - 35, finalY + 6)
-      doc.text(`-${cur}${sale.discount.toFixed(2)}`, totalX, finalY + 6, { align: 'right' })
+      doc.text(`-${pdfCur}${sale.discount.toFixed(2)}`, totalX, finalY + 6, { align: 'right' })
     }
     
     doc.setFont('helvetica', 'bold')
     doc.setFontSize(12)
     doc.setTextColor(31, 152, 112)
     doc.text('Grand Total:', totalX - 35, finalY + 14)
-    doc.text(`${cur}${sale.totalAmount.toFixed(2)}`, totalX, finalY + 14, { align: 'right' })
+    doc.text(`${pdfCur}${sale.totalAmount.toFixed(2)}`, totalX, finalY + 14, { align: 'right' })
     
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(10)
     doc.setTextColor(100)
     doc.text('Amount Paid:', totalX - 35, finalY + 21)
     doc.setTextColor(0, 150, 0)
-    doc.text(`${cur}${sale.paidAmount.toFixed(2)}`, totalX, finalY + 21, { align: 'right' })
+    doc.text(`${pdfCur}${sale.paidAmount.toFixed(2)}`, totalX, finalY + 21, { align: 'right' })
     
     if (sale.dueAmount > 0) {
       doc.setTextColor(200, 0, 0)
       doc.text('Due Amount:', totalX - 35, finalY + 27)
-      doc.text(`${cur}${sale.dueAmount.toFixed(2)}`, totalX, finalY + 27, { align: 'right' })
+      doc.text(`${pdfCur}${sale.dueAmount.toFixed(2)}`, totalX, finalY + 27, { align: 'right' })
     }
     
     // Footer

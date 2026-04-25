@@ -43,8 +43,7 @@ export default function ReportsPage() {
 
   const handlePrint = () => {
     if (!data) return
-    const doc = new jsPDF()
-    const pageW = doc.internal.pageSize.width
+    const pdfCur = (settings.currency === '৳' || !settings.currency) ? 'Tk.' : settings.currency;
     
     doc.setFontSize(18)
     doc.text(settings.shopName || 'PharmaCare Report', pageW / 2, 20, { align: 'center' })
@@ -56,10 +55,10 @@ export default function ReportsPage() {
       startY: 35,
       head: [['Total Revenue', 'Net Profit', 'Total Discount', 'Outstanding Dues']],
       body: [[
-        `${cur}${data.summary.totalRevenue.toFixed(2)}`,
-        `${cur}${data.summary.totalProfit.toFixed(2)}`,
-        `${cur}${data.summary.totalDiscount.toFixed(2)}`,
-        `${cur}${data.summary.totalDue.toFixed(2)}`
+        `${pdfCur}${data.summary.totalRevenue.toFixed(2)}`,
+        `${pdfCur}${data.summary.totalProfit.toFixed(2)}`,
+        `${pdfCur}${data.summary.totalDiscount.toFixed(2)}`,
+        `${pdfCur}${data.summary.totalDue.toFixed(2)}`
       ]],
       theme: 'grid',
       headStyles: { fillColor: [31, 152, 112] }
@@ -72,8 +71,8 @@ export default function ReportsPage() {
       body: data.daily.map(d => [
         format(new Date(d.date), 'MMM d, yyyy'),
         d.count,
-        `${cur}${d.revenue.toFixed(2)}`,
-        `${cur}${d.profit.toFixed(2)}`
+        `${pdfCur}${d.revenue.toFixed(2)}`,
+        `${pdfCur}${d.profit.toFixed(2)}`
       ]),
       headStyles: { fillColor: [42, 47, 69] }
     })
