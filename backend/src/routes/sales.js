@@ -83,15 +83,6 @@ router.post('/', authenticate, [
 
   const { customerId, items, discount = 0, tax = 0, paidAmount, paymentMethod = 'cash', notes } = req.body;
 
-  // Validate stock availability
-  for (const item of items) {
-    const batch = await prisma.batch.findUnique({ where: { id: item.batchId } });
-    if (!batch) throw Object.assign(new Error(`Batch not found: ${item.batchId}`), { status: 404 });
-    if (batch.quantity < item.quantity) {
-      throw Object.assign(new Error(`Insufficient stock for batch ${batch.batchNumber}. Available: ${batch.quantity}`), { status: 400 });
-    }
-  }
-
   const subtotal = items.reduce((sum, item) => {
     const lineTotal = item.quantity * item.unitPrice;
     return sum + lineTotal - (item.discount || 0);
@@ -117,6 +108,15 @@ router.post('/', authenticate, [
   }
 
   const result = await prisma.$transaction(async (tx) => {
+    // Validate stock availability INSIDE transaction
+    for (const item of items) {
+      const batch = await tx.batch.findUnique({ where: { id: item.batchId } });
+      if (!batch) throw Object.assign(new Error(`Batch not found: ${item.batchId}`), { status: 404 });
+      if (batch.quantity < item.quantity) {
+        throw Object.assign(new Error(`Insufficient stock for batch ${batch.batchNumber}. Available: ${batch.quantity}`), { status: 400 });
+      }
+    }
+
     const sale = await tx.sale.create({
       data: {
         invoiceNo,
