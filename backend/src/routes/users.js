@@ -50,6 +50,20 @@ router.put('/:id', authenticate, authorize('ADMIN'), asyncHandler(async (req, re
 // DELETE /api/users/:id
 router.delete('/:id', authenticate, authorize('ADMIN'), asyncHandler(async (req, res) => {
   if (req.params.id === req.user.id) return res.status(400).json({ error: 'Cannot delete yourself' });
+  
+  const { hard } = req.query;
+  
+  if (hard === 'true') {
+    // Check if user has associated records that would prevent deletion
+    const saleCount = await prisma.sale.count({ where: { userId: req.params.id } });
+    if (saleCount > 0) {
+      return res.status(400).json({ error: 'Cannot delete user with existing sales records. Deactivate them instead.' });
+    }
+    
+    await prisma.user.delete({ where: { id: req.params.id } });
+    return res.json({ message: 'User permanently deleted' });
+  }
+
   await prisma.user.update({ where: { id: req.params.id }, data: { isActive: false } });
   res.json({ message: 'User deactivated' });
 }));

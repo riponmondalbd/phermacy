@@ -88,9 +88,26 @@ export default function UsersPage() {
     const result = await confirmDelete('Revoke Access?', 'This user will no longer be able to log into the system.')
     if (!result.isConfirmed) return
     
-    await api.delete(`/users/${id}`)
-    toast.success('User access revoked')
-    fetchUsers()
+    try {
+      await api.delete(`/users/${id}`)
+      toast.success('User access revoked')
+      fetchUsers()
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Failed to revoke access')
+    }
+  }
+
+  const handleHardDelete = async (id) => {
+    const result = await confirmDelete('Permanent Delete?', 'This will completely remove the user from the database. This action cannot be undone and may fail if the user has recorded sales.')
+    if (!result.isConfirmed) return
+    
+    try {
+      await api.delete(`/users/${id}?hard=true`)
+      toast.success('User permanently deleted')
+      fetchUsers()
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Cannot delete user with existing records (sales, logs, etc.)')
+    }
   }
 
   return (
@@ -125,7 +142,8 @@ export default function UsersPage() {
                   </div>
                 </div>
                 <div className="absolute top-4 right-4 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button onClick={() => setModal(u)} className="btn-ghost btn-icon"><Edit2 size={14} /></button>
+                  <button onClick={() => setModal(u)} className="btn-ghost btn-icon" title="Edit User"><Edit2 size={14} /></button>
+                  <button onClick={() => handleHardDelete(u.id)} className="btn-ghost btn-icon text-red-400 hover:bg-red-500/10" title="Delete Permanently"><Trash2 size={14} /></button>
                 </div>
               </div>
 
