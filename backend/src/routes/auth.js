@@ -6,6 +6,7 @@ const { PrismaClient } = require('@prisma/client');
 const { body, validationResult } = require('express-validator');
 const { authenticate } = require('../middleware/auth');
 const { asyncHandler } = require('../middleware/errorHandler');
+const { logAction } = require('../utils/audit');
 
 const prisma = new PrismaClient();
 
@@ -26,6 +27,8 @@ router.post('/login', [
 
   const token = jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '24h' });
   const refreshToken = jwt.sign({ userId: user.id }, process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
+
+  await logAction(user.id, 'LOGIN', 'Auth');
 
   res.json({
     token,

@@ -5,6 +5,7 @@ const { PrismaClient } = require('@prisma/client');
 const { body, validationResult } = require('express-validator');
 const { authenticate, authorize } = require('../middleware/auth');
 const { asyncHandler } = require('../middleware/errorHandler');
+const { logAction } = require('../utils/audit');
 
 const prisma = new PrismaClient();
 
@@ -33,6 +34,9 @@ router.post('/', authenticate, authorize('ADMIN'), [
     data: { name, email, password: hashed, role },
     select: { id: true, name: true, email: true, role: true, isActive: true }
   });
+  
+  await logAction(req.user.id, 'CREATE_USER', 'User', user.id, { name, email, role });
+  
   res.status(201).json(user);
 }));
 
@@ -44,6 +48,9 @@ router.put('/:id', authenticate, authorize('ADMIN'), asyncHandler(async (req, re
     data: { name, email, role, isActive },
     select: { id: true, name: true, email: true, role: true, isActive: true }
   });
+
+  await logAction(req.user.id, 'UPDATE_USER', 'User', user.id, { name, email, role, isActive });
+
   res.json(user);
 }));
 
@@ -61,10 +68,12 @@ router.delete('/:id', authenticate, authorize('ADMIN'), asyncHandler(async (req,
     }
     
     await prisma.user.delete({ where: { id: req.params.id } });
+    await logAction(req.user.id, 'HARD_DELETE_USER', 'User', req.params.id);
     return res.json({ message: 'User permanently deleted' });
   }
 
   await prisma.user.update({ where: { id: req.params.id }, data: { isActive: false } });
+  await logAction(req.user.id, 'DEACTIVATE_USER', 'User', req.params.id);
   res.json({ message: 'User deactivated' });
 }));
 

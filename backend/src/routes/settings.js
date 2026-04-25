@@ -3,6 +3,7 @@ const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
 const { authenticate, authorize } = require('../middleware/auth');
 const { asyncHandler } = require('../middleware/errorHandler');
+const { logAction } = require('../utils/audit');
 
 const prisma = new PrismaClient();
 
@@ -25,6 +26,9 @@ router.put('/', authenticate, authorize('ADMIN'), asyncHandler(async (req, res) 
     })
   );
   await prisma.$transaction(ops);
+  
+  await logAction(req.user.id, 'UPDATE_SETTINGS', 'Setting', null, updates);
+  
   const all = await prisma.setting.findMany();
   const result = {};
   all.forEach(s => result[s.key] = s.value);
