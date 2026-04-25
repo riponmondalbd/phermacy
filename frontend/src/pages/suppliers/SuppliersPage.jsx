@@ -73,7 +73,7 @@ function SupplierModal({ supplier, onClose, onSave }) {
   )
 }
 
-function PaymentModal({ supplier, onClose, onSave }) {
+function PaymentModal({ supplier, onClose, onSave, cur }) {
   const [form, setForm] = useState({ amount: '', method: 'cash', notes: '' })
   const [saving, setSaving] = useState(false)
 
@@ -341,6 +341,7 @@ export default function SuppliersPage() {
       {paymentModal && (
         <PaymentModal
           supplier={paymentModal}
+          cur={cur}
           onClose={() => setPaymentModal(null)}
           onSave={() => { setPaymentModal(null); fetchSuppliers() }}
         />
