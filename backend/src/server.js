@@ -8,7 +8,17 @@ require('dotenv').config();
 
 const { logger } = require('./utils/logger');
 const { errorHandler } = require('./middleware/errorHandler');
-const { scheduleJobs } = require('./utils/scheduler');
+
+// Only load scheduler if not on Vercel
+let scheduleJobs = () => {};
+if (!process.env.VERCEL) {
+  try {
+    const scheduler = require('./utils/scheduler');
+    scheduleJobs = scheduler.scheduleJobs;
+  } catch (e) {
+    console.error('Failed to load scheduler:', e.message);
+  }
+}
 const { initDb } = require('./utils/dbInit');
 
 // Initialize DB if empty
@@ -105,12 +115,16 @@ app.get('/api', (req, res) => {
 });
 
 // Serve static frontend in production if folder exists
-const frontendPath = path.join(__dirname, '../../frontend/dist');
-if (require('fs').existsSync(frontendPath)) {
-  app.use(express.static(frontendPath));
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(frontendPath, 'index.html'));
-  });
+try {
+  const frontendPath = path.join(__dirname, '../../frontend/dist');
+  if (require('fs').existsSync(frontendPath)) {
+    app.use(express.static(frontendPath));
+    app.get('*', (req, res) => {
+      res.sendFile(path.join(frontendPath, 'index.html'));
+    });
+  }
+} catch (e) {
+  console.log('Static serving skipped or failed:', e.message);
 }
 
 // Error handler

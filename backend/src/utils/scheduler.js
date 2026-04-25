@@ -5,8 +5,7 @@ const archiver = require('archiver');
 const fs = require('fs');
 const path = require('path');
 const { logger } = require('./logger');
-
-const prisma = new PrismaClient();
+const prisma = require('./prisma');
 
 const createBackup = async () => {
   const DB_PATH = path.join(__dirname, '../../prisma/pharmacy.db');
