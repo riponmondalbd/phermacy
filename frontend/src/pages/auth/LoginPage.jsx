@@ -10,7 +10,7 @@ export default function LoginPage() {
   const navigate = useNavigate()
   const { setAuth } = useAuthStore()
   const { setSettings } = useSettingsStore()
-  const [form, setForm] = useState({ email: import.meta.env.VITE_ADMIN_EMAIL || '', password: import.meta.env.VITE_ADMIN_PASSWORD || '' })
+  const [form, setForm] = useState({ email: '', password: '' })
   const [showPass, setShowPass] = useState(false)
   const [loading, setLoading] = useState(false)
 
