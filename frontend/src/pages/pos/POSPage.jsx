@@ -4,13 +4,13 @@ import { usePOSStore } from '../../store/posStore'
 import { useSettingsStore } from '../../store/settingsStore'
 import { useAuthStore } from '../../store/authStore'
 import toast from 'react-hot-toast'
-import { Search, Plus, Minus, Trash2, ShoppingCart, User, Printer, Check, X } from 'lucide-react'
+import { Search, Plus, Minus, Trash2, ShoppingCart, User, Printer, Check, X, Package } from 'lucide-react'
 import { format } from 'date-fns'
 import jsPDF from 'jspdf'
 import 'jspdf-autotable'
 import clsx from 'clsx'
 
-function ProductCard({ product, onAdd }) {
+function ProductCard({ product, onAdd, cur }) {
   const stock = product.totalStock || 0
   const firstBatch = product.batches?.[0]
   return (
@@ -32,7 +32,7 @@ function ProductCard({ product, onAdd }) {
   )
 }
 
-function CartItem({ item, onQtyChange, onPriceChange, onRemove }) {
+function CartItem({ item, onQtyChange, onPriceChange, onRemove, cur }) {
   return (
     <div className="flex flex-col gap-1 py-2 border-b border-[#2a2f45] last:border-0">
       <div className="flex items-start justify-between gap-2">
@@ -291,12 +291,25 @@ export default function POSPage() {
 
         {/* Product results */}
         {products.length > 0 && (
-          <div className="card p-3">
-            <div className="text-xs text-[#94a3b8] mb-2">{products.length} product(s) found</div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+          <div className="card p-3 flex-1 overflow-y-auto">
+            <div className="text-xs text-[#94a3b8] mb-2 font-medium flex justify-between">
+              <span>{products.length} product(s) found</span>
+              <span className="text-[10px] text-brand-400">Click to add to cart</span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
               {products.map(p => (
-                <ProductCard key={p.id} product={p} onAdd={handleAddToCart} />
+                <ProductCard key={p.id} product={p} onAdd={handleAddToCart} cur={cur} />
               ))}
+            </div>
+          </div>
+        )}
+
+        {search && !searching && products.length === 0 && (
+          <div className="flex-1 flex items-center justify-center text-[#475569] text-sm">
+            <div className="text-center">
+              <Package size={40} className="mx-auto mb-3 opacity-30" />
+              <p>No products found for "{search}"</p>
+              <p className="text-[10px] mt-1 italic">Make sure products are in stock and not expired.</p>
             </div>
           </div>
         )}
@@ -304,7 +317,7 @@ export default function POSPage() {
         {!search && (
           <div className="flex-1 flex items-center justify-center text-[#475569] text-sm">
             <div className="text-center">
-              <Search size={40} className="mx-auto mb-3 opacity-30" />
+              <ShoppingCart size={40} className="mx-auto mb-3 opacity-30" />
               <p>Search for products to add to cart</p>
             </div>
           </div>
@@ -374,6 +387,7 @@ export default function POSPage() {
               onQtyChange={updateQty}
               onPriceChange={updatePrice}
               onRemove={removeItem}
+              cur={cur}
             />
           ))}
         </div>

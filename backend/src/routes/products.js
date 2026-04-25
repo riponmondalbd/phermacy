@@ -79,7 +79,7 @@ router.get('/search/pos', authenticate, asyncHandler(async (req, res) => {
       OR: [
         { name: { contains: q } },
         { genericName: { contains: q } },
-        { barcode: q }
+        { barcode: { contains: q } }
       ]
     },
     include: {
