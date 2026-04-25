@@ -9,6 +9,10 @@ require('dotenv').config();
 const { logger } = require('./utils/logger');
 const { errorHandler } = require('./middleware/errorHandler');
 const { scheduleJobs } = require('./utils/scheduler');
+const { initDb } = require('./utils/dbInit');
+
+// Initialize DB if empty
+initDb();
 
 // Routes
 const authRoutes = require('./routes/auth');
