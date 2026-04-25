@@ -2,8 +2,10 @@ import axios from 'axios'
 import { useAuthStore } from '../store/authStore'
 import toast from 'react-hot-toast'
 
+const API_URL = import.meta.env.VITE_API_URL || '/api';
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: API_URL,
   timeout: 15000,
   withCredentials: true,
   headers: { 'Content-Type': 'application/json' }
@@ -26,7 +28,7 @@ api.interceptors.response.use(
       try {
         const refreshToken = useAuthStore.getState().refreshToken
         if (refreshToken) {
-          const { data } = await axios.post('/api/auth/refresh', { refreshToken })
+          const { data } = await axios.post(`${API_URL}/auth/refresh`, { refreshToken })
           useAuthStore.getState().setToken(data.token)
           originalReq.headers.Authorization = `Bearer ${data.token}`
           return api(originalReq)
