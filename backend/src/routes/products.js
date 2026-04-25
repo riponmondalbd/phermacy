@@ -137,7 +137,7 @@ router.post('/', authenticate, authorize('ADMIN', 'MANAGER'), [
       const cat = await tx.category.findUnique({ where: { id: finalCategoryId } });
       if (cat) catName = cat.name;
     }
-    const finalBarcode = barcode || `${catName.substring(0,3).toUpperCase()}_${name.replace(/\s+/g, '')}_${Date.now().toString().slice(-4)}`;
+    const finalBarcode = barcode || `${catName.substring(0,3).toUpperCase()}_${name.replace(/\s+/g, '')}_${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
 
     const p = await tx.product.create({
       data: {

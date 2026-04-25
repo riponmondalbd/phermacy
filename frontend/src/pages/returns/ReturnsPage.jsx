@@ -7,7 +7,7 @@ import { useAuthStore } from '../../store/authStore'
 import clsx from 'clsx'
 import toast from 'react-hot-toast'
 
-function ReturnModal({ onClose, onSave }) {
+function ReturnModal({ onClose, onSave, cur }) {
   const [invoiceSearch, setInvoiceSearch] = useState('')
   const [sale, setSale] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -127,7 +127,7 @@ function ReturnModal({ onClose, onSave }) {
                             )}
                           </td>
                           <td className="text-right font-medium">
-                            {isSelected ? `৳${(returnItem.returnQty * item.unitPrice).toFixed(2)}` : '—'}
+                            {isSelected ? `${cur}${(returnItem.returnQty * item.unitPrice).toFixed(2)}` : '—'}
                           </td>
                         </tr>
                       )
@@ -144,7 +144,7 @@ function ReturnModal({ onClose, onSave }) {
               <div className="flex justify-end pt-2 border-t border-[#2a2f45]">
                 <div className="text-right">
                   <div className="text-xs text-[#94a3b8]">Refund Amount</div>
-                  <div className="text-xl font-bold text-brand-400">৳{totalReturn.toFixed(2)}</div>
+                  <div className="text-xl font-bold text-brand-400">{cur}{totalReturn.toFixed(2)}</div>
                 </div>
               </div>
             </div>
@@ -166,6 +166,7 @@ export default function ReturnsPage() {
   const [modal, setModal] = useState(false)
   const { settings } = useSettingsStore()
   const cur = settings.currency || '৳'
+  const curLabel = settings.currency || '৳'
 
   const fetchReturns = async () => {
     setLoading(true)
@@ -231,6 +232,7 @@ export default function ReturnsPage() {
       {modal && (
         <ReturnModal
           onClose={() => setModal(false)}
+          cur={cur}
           onSave={() => { setModal(false); fetchReturns() }}
         />
       )}

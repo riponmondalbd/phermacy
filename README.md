@@ -41,7 +41,7 @@ A production-grade, offline-first Windows desktop application for pharmacy manag
     ```bash
     npm run dev
     ```
-    This starts the Express server (3001) and Vite dev server (5173) concurrently.
+    This starts the Express server (4000) and Vite dev server (5173) concurrently.
 
 4.  **Run Electron:**
     ```bash

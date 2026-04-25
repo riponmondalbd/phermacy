@@ -8,7 +8,7 @@ import AdjustmentModal from '../../components/AdjustmentModal'
 import { confirmDelete } from '../../utils/swal'
 import clsx from 'clsx'
 
-function ProductModal({ product, categories, products, onClose, onSave }) {
+function ProductModal({ product, categories, products, onClose, onSave, cur }) {
   const [form, setForm] = useState(product ? {
     ...product,
     categoryId: product.category?.name || '' // Show name for searchable input
@@ -107,7 +107,7 @@ function ProductModal({ product, categories, products, onClose, onSave }) {
             </div>
           )}
           <div className="form-group">
-            <label className="label">Sale Price (৳) *</label>
+            <label className="label">Sale Price ({cur}) *</label>
             <input type="number" className="input" value={form.salePrice} onChange={e => set('salePrice', e.target.value)} min="0" step="0.01" />
           </div>
           <div className="form-group">
@@ -302,6 +302,7 @@ export default function ProductsPage() {
           product={modal === 'create' ? null : modal}
           categories={categories}
           products={products}
+          cur={cur}
           onClose={() => setModal(null)}
           onSave={handleSaved}
         />

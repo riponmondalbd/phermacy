@@ -23,7 +23,7 @@ function ProductCard({ product, onAdd }) {
       </div>
       <div className="text-[10px] text-[#94a3b8]">{product.genericName}</div>
       <div className="flex items-center justify-between mt-auto pt-1">
-        <span className="text-brand-400 font-bold text-sm">৳{product.salePrice}</span>
+        <span className="text-brand-400 font-bold text-sm">{cur}{product.salePrice}</span>
         <span className={clsx('text-[10px] font-medium', stock > 0 ? 'text-green-400' : 'text-red-400')}>
           {stock > 0 ? `${stock} in stock` : 'Out of stock'}
         </span>
@@ -60,7 +60,7 @@ function CartItem({ item, onQtyChange, onPriceChange, onRemove }) {
           className="input-sm w-20 text-center"
         />
         <span className="ml-auto text-xs font-semibold text-white">
-          ৳{((item.quantity * item.unitPrice) - item.discount).toFixed(2)}
+          {cur}{((item.quantity * item.unitPrice) - item.discount).toFixed(2)}
         </span>
       </div>
     </div>

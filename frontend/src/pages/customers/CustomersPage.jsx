@@ -65,7 +65,7 @@ function CustomerModal({ customer, onClose, onSave }) {
   )
 }
 
-function PaymentModal({ customer, onClose, onSave }) {
+function PaymentModal({ customer, onClose, onSave, cur }) {
   const [form, setForm] = useState({ amount: '', method: 'cash', notes: '' })
   const [saving, setSaving] = useState(false)
 
@@ -95,7 +95,7 @@ function PaymentModal({ customer, onClose, onSave }) {
         <div className="modal-body space-y-4">
           <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
             <div className="text-xs text-red-400 font-medium">Outstanding Due</div>
-            <div className="text-xl font-bold text-red-400">৳{customer.dueAmount.toFixed(2)}</div>
+            <div className="text-xl font-bold text-red-400">{cur}{customer.dueAmount.toFixed(2)}</div>
           </div>
           <div className="form-group">
             <label className="label">Amount Received</label>
@@ -297,6 +297,7 @@ export default function CustomersPage() {
       {paymentModal && (
         <PaymentModal
           customer={paymentModal}
+          cur={cur}
           onClose={() => setPaymentModal(null)}
           onSave={() => { setPaymentModal(null); fetchCustomers() }}
         />

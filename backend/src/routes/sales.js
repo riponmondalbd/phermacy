@@ -159,9 +159,9 @@ router.post('/', authenticate, [
     }
 
     // Update customer totals & due
-    if (customerId) {
+    if (finalCustomerId) {
       await tx.customer.update({
-        where: { id: customerId },
+        where: { id: finalCustomerId },
         data: {
           totalPurchase: { increment: totalAmount },
           dueAmount: { increment: due }
@@ -169,7 +169,7 @@ router.post('/', authenticate, [
       });
       if (paid > 0) {
         await tx.customerPayment.create({
-          data: { customerId, saleId: sale.id, amount: paid, method: paymentMethod }
+          data: { customerId: finalCustomerId, saleId: sale.id, amount: paid, method: paymentMethod }
         });
       }
     }

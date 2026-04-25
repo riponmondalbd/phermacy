@@ -103,7 +103,7 @@ function PaymentModal({ supplier, onClose, onSave }) {
         <div className="modal-body space-y-4">
           <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
             <div className="text-xs text-red-400 font-medium">Total Due</div>
-            <div className="text-xl font-bold text-red-400">৳{supplier.dueAmount.toFixed(2)}</div>
+            <div className="text-xl font-bold text-red-400">{cur}{supplier.dueAmount.toFixed(2)}</div>
           </div>
           <div className="form-group">
             <label className="label">Amount to Pay</label>

@@ -9,7 +9,7 @@ const { authenticate, authorize } = require('../middleware/auth');
 const { asyncHandler } = require('../middleware/errorHandler');
 const { logger } = require('../utils/logger');
 
-const DB_PATH = process.env.DB_PATH || path.join(__dirname, '../../prisma/pharmacy.db');
+const DB_PATH = process.env.DB_PATH || path.join(__dirname, '../../dev.db');
 const BACKUP_DIR = process.env.BACKUP_DIR || path.join(__dirname, '../../backups');
 const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(__dirname, '../../temp_uploads');
 

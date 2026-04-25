@@ -8,7 +8,7 @@ import { format } from 'date-fns'
 import { confirmDelete } from '../../utils/swal'
 import clsx from 'clsx'
 
-function PurchaseModal({ onClose, onSave, suppliers, products, categories, initialData }) {
+function PurchaseModal({ onClose, onSave, suppliers, products, categories, initialData, cur }) {
   const [form, setForm] = useState(initialData ? {
     ...initialData,
     purchaseDate: format(new Date(initialData.purchaseDate), 'yyyy-MM-dd'),
@@ -233,8 +233,8 @@ function PurchaseModal({ onClose, onSave, suppliers, products, categories, initi
                     <td className="text-xs">{item.unit}</td>
                     <td className="text-xs">{item.expiryDate}</td>
                     <td className="text-right font-bold">{item.quantity}</td>
-                    <td className="text-right">৳{item.purchasePrice.toFixed(2)}</td>
-                    <td className="text-right text-brand-400 font-bold">৳{(item.sellingPrice || 0).toFixed(2)}</td>
+                    <td className="text-right">{cur}{item.purchasePrice.toFixed(2)}</td>
+                    <td className="text-right text-brand-400 font-bold">{cur}{(item.sellingPrice || 0).toFixed(2)}</td>
                     <td className="text-right"><button onClick={() => removeItem(idx)} className="text-red-400 hover:text-red-300"><Trash2 size={14} /></button></td>
                   </tr>
                 ))}
@@ -251,7 +251,7 @@ function PurchaseModal({ onClose, onSave, suppliers, products, categories, initi
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-[#94a3b8]">Subtotal</span>
-                <span className="text-white font-medium">৳{subtotal.toFixed(2)}</span>
+                <span className="text-white font-medium">{cur}{subtotal.toFixed(2)}</span>
               </div>
               <div className="flex items-center justify-between gap-4">
                 <label className="text-sm text-[#94a3b8]">Discount</label>
@@ -259,7 +259,7 @@ function PurchaseModal({ onClose, onSave, suppliers, products, categories, initi
               </div>
               <div className="flex justify-between text-lg font-bold border-t border-[#2a2f45] pt-2">
                 <span className="text-white">Total</span>
-                <span className="text-brand-400">৳{total.toFixed(2)}</span>
+                <span className="text-brand-400">{cur}{total.toFixed(2)}</span>
               </div>
               <div className="flex items-center justify-between gap-4 pt-2">
                 <label className="text-sm text-[#94a3b8]">Paid Amount</label>
@@ -267,7 +267,7 @@ function PurchaseModal({ onClose, onSave, suppliers, products, categories, initi
               </div>
               <div className="flex justify-between text-sm text-red-400">
                 <span>Due Amount</span>
-                <span>৳{(total - parseFloat(form.paidAmount || 0)).toFixed(2)}</span>
+                <span>{cur}{(total - parseFloat(form.paidAmount || 0)).toFixed(2)}</span>
               </div>
             </div>
           </div>
@@ -510,6 +510,7 @@ export default function PurchasesPage() {
           suppliers={suppliers}
           products={products}
           categories={categories}
+          cur={cur}
           onClose={() => setModal(null)}
           onSave={handleSaved}
         />

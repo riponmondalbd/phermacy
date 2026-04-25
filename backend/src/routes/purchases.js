@@ -226,6 +226,14 @@ router.delete('/:id', authenticate, authorize('ADMIN'), asyncHandler(async (req,
   });
   if (!purchase) return res.status(404).json({ error: 'Purchase not found' });
 
+  // Check if any batch from this purchase has been sold
+  const usedBatches = purchase.items.filter(item => item.batch.quantity < item.batch.initialQty);
+  if (usedBatches.length > 0) {
+    return res.status(400).json({ 
+      error: `Cannot delete purchase. ${usedBatches.length} items have already been sold from these batches.` 
+    });
+  }
+
   await prisma.$transaction([
     // Remove batches created by this purchase
     ...purchase.items.map(item => prisma.batch.delete({ where: { id: item.batchId } })),
