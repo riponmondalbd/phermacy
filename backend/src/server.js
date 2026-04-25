@@ -96,8 +96,12 @@ app.use('/api/backup', backupRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 
 // Health check
-app.get('/health', (req, res) => {
+app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+app.get('/api', (req, res) => {
+  res.json({ message: 'Pharmacy API is running' });
 });
 
 // Serve static frontend in production
