@@ -19,11 +19,35 @@ router.post('/customer', authenticate, asyncHandler(async (req, res) => {
   const totalAmount = items.reduce((sum, i) => sum + (i.quantity * i.unitPrice), 0);
 
   const result = await prisma.$transaction(async (tx) => {
+    // 1. Calculate and validate items
+    let calculatedTotal = 0;
+    for (const item of items) {
+      const saleItem = await tx.saleItem.findFirst({
+        where: { saleId, batchId: item.batchId, productId: item.productId }
+      });
+      if (!saleItem) throw new Error(`Item not found in sale: ${item.batchId}`);
+
+      const previousReturns = await tx.returnItem.findMany({
+        where: { 
+          return: { saleId },
+          batchId: item.batchId,
+          productId: item.productId
+        }
+      });
+      const alreadyReturned = previousReturns.reduce((sum, ri) => sum + ri.quantity, 0);
+      const availableToReturn = saleItem.quantity - alreadyReturned;
+
+      if (parseInt(item.quantity) > availableToReturn) {
+        throw new Error(`Exceeded return limit for item. Available: ${availableToReturn}`);
+      }
+      calculatedTotal += (parseInt(item.quantity) * parseFloat(item.unitPrice));
+    }
+
     const ret = await tx.return.create({
       data: {
         saleId,
         customerId: sale.customerId,
-        totalAmount,
+        totalAmount: calculatedTotal,
         refundMethod,
         reason,
         notes
@@ -49,18 +73,34 @@ router.post('/customer', authenticate, asyncHandler(async (req, res) => {
       });
     }
 
-    // Update sale status
-    const fullReturn = totalAmount >= sale.totalAmount;
+    // Update sale status and amounts
+    const allReturnsForSale = await tx.return.findMany({ where: { saleId } });
+    const totalReturnedSoFar = allReturnsForSale.reduce((sum, r) => sum + r.totalAmount, 0);
+    const isFullReturn = totalReturnedSoFar >= sale.totalAmount;
+
+    // Calculate how much of this return should reduce the sale's due vs paid amount
+    const reductionInDue = Math.min(calculatedTotal, sale.dueAmount);
+    
     await tx.sale.update({
       where: { id: saleId },
-      data: { status: fullReturn ? 'FULLY_RETURNED' : 'PARTIAL_RETURN' }
+      data: { 
+        status: isFullReturn ? 'FULLY_RETURNED' : 'PARTIAL_RETURN',
+        dueAmount: { decrement: reductionInDue },
+        // We also reduce totalAmount so the sale reflects the actual remaining value
+        totalAmount: { decrement: calculatedTotal }
+      }
     });
 
-    // Update customer due if refund
-    if (sale.customerId && refundMethod === 'cash') {
+    // Update customer stats
+    if (sale.customerId) {
+      // Decrement total purchase
       await tx.customer.update({
         where: { id: sale.customerId },
-        data: { dueAmount: { decrement: Math.min(totalAmount, sale.dueAmount) } }
+        data: { 
+          totalPurchase: { decrement: calculatedTotal },
+          // If it was a credit/due sale, reduce the due first
+          dueAmount: { decrement: Math.min(calculatedTotal, sale.dueAmount) }
+        }
       });
     }
 

@@ -34,11 +34,21 @@ router.get('/sessions/active', authenticate, asyncHandler(async (req, res) => {
   });
 
   if (session) {
-    const salesAgg = await prisma.sale.aggregate({
-      where: { saleDate: { gte: today, lt: tomorrow }, paymentMethod: 'cash' },
-      _sum: { paidAmount: true }
-    });
-    session.totalSales = salesAgg._sum.paidAmount || 0;
+    const [salesAgg, returnsAgg] = await Promise.all([
+      prisma.sale.aggregate({
+        where: { saleDate: { gte: today, lt: tomorrow }, paymentMethod: 'cash' },
+        _sum: { paidAmount: true }
+      }),
+      prisma.return.aggregate({
+        where: { returnDate: { gte: today, lt: tomorrow }, refundMethod: 'cash' },
+        _sum: { totalAmount: true }
+      })
+    ]);
+    
+    const cashSales = salesAgg._sum.paidAmount || 0;
+    const cashReturns = returnsAgg._sum.totalAmount || 0;
+    
+    session.totalSales = cashSales - cashReturns;
     session.totalExpenses = session.expenses.reduce((s, e) => s + e.amount, 0);
   }
 
@@ -68,14 +78,20 @@ router.post('/sessions/:id/close', authenticate, asyncHandler(async (req, res) =
   if (!session) return res.status(404).json({ error: 'Session not found' });
   if (session.isClosed) return res.status(400).json({ error: 'Session already closed' });
 
-  // Calculate today's sales
+  // Calculate today's sales and returns
   const today = new Date(session.date); today.setHours(0,0,0,0);
   const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
-  const salesAgg = await prisma.sale.aggregate({
-    where: { saleDate: { gte: today, lt: tomorrow }, paymentMethod: 'cash' },
-    _sum: { paidAmount: true }
-  });
-  const totalSales = salesAgg._sum.paidAmount || 0;
+  const [salesAgg, returnsAgg] = await Promise.all([
+    prisma.sale.aggregate({
+      where: { saleDate: { gte: today, lt: tomorrow }, paymentMethod: 'cash' },
+      _sum: { paidAmount: true }
+    }),
+    prisma.return.aggregate({
+      where: { returnDate: { gte: today, lt: tomorrow }, refundMethod: 'cash' },
+      _sum: { totalAmount: true }
+    })
+  ]);
+  const totalSales = (salesAgg._sum.paidAmount || 0) - (returnsAgg._sum.totalAmount || 0);
   const totalExpenses = session.expenses.reduce((s, e) => s + e.amount, 0);
 
   const closed = await prisma.cashSession.update({

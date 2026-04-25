@@ -33,18 +33,31 @@ function ReturnModal({ onClose, onSave, cur }) {
     } finally { setLoading(false) }
   }
 
+  const getAlreadyReturned = (batchId) => {
+    if (!sale?.returns) return 0
+    return sale.returns.reduce((sum, ret) => {
+      const item = ret.items.find(i => i.batchId === batchId)
+      return sum + (item ? item.quantity : 0)
+    }, 0)
+  }
+
   const toggleItem = (item) => {
+    const returned = getAlreadyReturned(item.batchId)
+    const available = item.quantity - returned
+    if (available <= 0) return
+
     const existing = returnItems.find(i => i.batchId === item.batchId)
     if (existing) {
       setReturnItems(returnItems.filter(i => i.batchId !== item.batchId))
     } else {
-      setReturnItems([...returnItems, { ...item, returnQty: 1 }])
+      setReturnItems([...returnItems, { ...item, returnQty: 1, available }])
     }
   }
 
   const updateQty = (batchId, qty) => {
     const saleItem = sale.items.find(i => i.batchId === batchId)
-    const max = saleItem.quantity
+    const returned = getAlreadyReturned(batchId)
+    const max = saleItem.quantity - returned
     const newQty = Math.min(Math.max(1, parseInt(qty) || 1), max)
     setReturnItems(returnItems.map(i => i.batchId === batchId ? { ...i, returnQty: newQty } : i))
   }
@@ -104,27 +117,45 @@ function ReturnModal({ onClose, onSave, cur }) {
                     <tr>
                       <th>#</th>
                       <th>Product</th>
-                      <th>Sold Qty</th>
+                      <th>Sold</th>
+                      <th>Returned</th>
                       <th>Return Qty</th>
                       <th>Total</th>
                     </tr>
                   </thead>
                   <tbody>
                     {sale.items.map(item => {
+                      const alreadyReturned = getAlreadyReturned(item.batchId)
+                      const available = item.quantity - alreadyReturned
                       const isSelected = returnItems.some(ri => ri.batchId === item.batchId)
                       const returnItem = returnItems.find(ri => ri.batchId === item.batchId)
+                      const isFullyReturned = available <= 0
+
                       return (
-                        <tr key={item.id} className={clsx(isSelected && 'bg-brand-600/5')}>
-                          <td><input type="checkbox" checked={isSelected} onChange={() => toggleItem(item)} className="accent-brand-600" /></td>
+                        <tr key={item.id} className={clsx(isSelected && 'bg-brand-600/5', isFullyReturned && 'opacity-50')}>
+                          <td>
+                            <input 
+                              type="checkbox" 
+                              disabled={isFullyReturned}
+                              checked={isSelected} 
+                              onChange={() => toggleItem(item)} 
+                              className="accent-brand-600" 
+                            />
+                          </td>
                           <td>
                             <div className="font-medium text-xs">{item.product.name}</div>
                             <div className="text-[10px] text-[#94a3b8]">{item.batch?.batchNumber}</div>
                           </td>
                           <td className="text-center">{item.quantity}</td>
+                          <td className="text-center text-red-400">{alreadyReturned > 0 ? alreadyReturned : '—'}</td>
                           <td>
                             {isSelected && (
-                              <input type="number" className="input-sm w-16" value={returnItem.returnQty} onChange={e => updateQty(item.batchId, e.target.value)} />
+                              <div className="flex flex-col gap-1">
+                                <input type="number" className="input-sm w-16" value={returnItem.returnQty} onChange={e => updateQty(item.batchId, e.target.value)} />
+                                <span className="text-[9px] text-[#94a3b8]">Max: {available}</span>
+                              </div>
                             )}
+                            {isFullyReturned && <span className="text-[10px] text-red-400 font-medium">Fully Refunded</span>}
                           </td>
                           <td className="text-right font-medium">
                             {isSelected ? `${cur}${(returnItem.returnQty * item.unitPrice).toFixed(2)}` : '—'}

@@ -62,7 +62,8 @@ router.get('/:id', authenticate, asyncHandler(async (req, res) => {
       customer: true,
       user: { select: { id: true, name: true } },
       items: { include: { product: true, batch: true } },
-      payments: true
+      payments: true,
+      returns: { include: { items: true } }
     }
   });
   if (!sale) return res.status(404).json({ error: 'Sale not found' });
