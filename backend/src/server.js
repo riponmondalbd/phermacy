@@ -107,10 +107,12 @@ app.get('*', (req, res) => {
 // Error handler
 app.use(errorHandler);
 
-// Start server
-app.listen(PORT, () => {
-  logger.info(`🚀 Pharmacy API running on http://localhost:${PORT}`);
-  scheduleJobs();
-});
+// Only start the server if not running as a serverless function
+if (require.main === module) {
+  app.listen(PORT, () => {
+    logger.info(`🚀 Pharmacy API running on http://localhost:${PORT}`);
+    scheduleJobs();
+  });
+}
 
 module.exports = app;
