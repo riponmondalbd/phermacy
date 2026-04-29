@@ -1,0 +1,8 @@
+{
+  "name": "pharma-care-monorepo",
+  "private": true,
+  "scripts": {
+    "build": "cd frontend && npm install && npm run build && cd ../backend && npm install",
+    "start": "node backend/src/server.js"
+  }
+}
