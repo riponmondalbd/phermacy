@@ -76,6 +76,10 @@ router.get('/download/:filename', authenticate, authorize('ADMIN'), asyncHandler
 
 // POST /api/backup/restore — Upload and restore
 router.post('/restore', authenticate, authorize('ADMIN'), upload.single('file'), asyncHandler(async (req, res) => {
+  if (isPostgres()) {
+    if (req.file) fs.unlinkSync(req.file.path);
+    return res.status(400).json({ error: 'Restore via zip is only supported for local SQLite databases.' });
+  }
   if (!req.file) return res.status(400).json({ error: 'No backup file uploaded' });
 
   const zipPath = req.file.path;
@@ -126,6 +130,10 @@ router.delete('/:filename', authenticate, authorize('ADMIN'), asyncHandler(async
   if (!fs.existsSync(file)) return res.status(404).json({ error: 'File not found' });
   fs.unlinkSync(file);
   res.json({ message: 'Backup deleted' });
+}));
+
+module.exports = router;
+message: 'Backup deleted' });
 }));
 
 module.exports = router;

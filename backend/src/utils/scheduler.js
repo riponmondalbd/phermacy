@@ -8,13 +8,15 @@ const { logger } = require('./logger');
 const prisma = require('./prisma');
 
 const createBackup = async () => {
+  if (process.env.DATABASE_URL?.includes('postgres')) {
+    logger.info('Cloud Database Backup requested. Database is managed by PostgreSQL provider (e.g. Neon).');
+    return null;
+  }
+  
   const DB_PATH = path.join(__dirname, '../../prisma/pharmacy.db');
   const BACKUP_DIR = path.join(__dirname, '../../backups');
   if (!fs.existsSync(BACKUP_DIR)) fs.mkdirSync(BACKUP_DIR, { recursive: true });
-
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const backupFile = path.join(BACKUP_DIR, `auto-backup-${timestamp}.zip`);
-
+...
   await new Promise((resolve, reject) => {
     const output = fs.createWriteStream(backupFile);
     const archive = archiver('zip', { zlib: { level: 9 } });

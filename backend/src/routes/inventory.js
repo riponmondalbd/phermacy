@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { authenticate, authorize } = require('../middleware/auth');
 const { asyncHandler } = require('../middleware/errorHandler');
+const { auditLog } = require('../middleware/audit');
 const prisma = require('../utils/prisma');
 
 // GET /api/inventory/stock  — all products with current stock levels
