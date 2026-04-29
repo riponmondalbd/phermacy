@@ -55,14 +55,26 @@ router.post('/login', [
 // POST /api/auth/refresh
 router.post('/refresh', asyncHandler(async (req, res) => {
   const { refreshToken } = req.body;
-  if (!refreshToken) return res.status(401).json({ error: 'No refresh token' });
+  if (!refreshToken) return res.status(401).json({ error: 'No refresh token provided' });
 
-  const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-  const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
-  if (!user || !user.isActive) return res.status(401).json({ error: 'Unauthorized' });
+  try {
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+    const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
+    
+    if (!user || !user.isActive) {
+      return res.status(401).json({ error: 'User not found or inactive' });
+    }
 
-  const token = jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '24h' });
-  res.json({ token });
+    const token = jwt.sign(
+      { userId: user.id, role: user.role }, 
+      process.env.JWT_SECRET, 
+      { expiresIn: '24h' }
+    );
+    
+    res.json({ token });
+  } catch (err) {
+    return res.status(401).json({ error: 'Invalid or expired refresh token' });
+  }
 }));
 
 // GET /api/auth/me

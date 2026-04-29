@@ -39,7 +39,7 @@ A production-grade, full-stack Pharmacy Management System (PMS) designed for hig
 
 ### Prerequisites
 - Node.js (v18+)
-- A PostgreSQL Database (Neon recommended)
+- A PostgreSQL Database (Neon.tech is highly recommended for serverless)
 
 ### Step 1: Clone and Install
 ```bash
@@ -51,29 +51,21 @@ cd phermacy
 npm install
 
 # Install sub-project dependencies
-cd frontend && npm install
-cd ../backend && npm install
+npm install --workspace=frontend
+npm install --workspace=backend
 ```
 
 ### Step 2: Environment Configuration
-Create a `.env` file in the `backend/` directory with the following variables:
-```env
-PORT=4000
-DATABASE_URL="your_postgresql_connection_string"
-JWT_SECRET="your_secure_random_secret"
-FRONTEND_URL="http://localhost:5173"
-
-# Default Admin Credentials
-ADMIN_EMAIL="admin@example.com"
-ADMIN_PASSWORD="secure_password"
-```
+1.  Navigate to `backend/`.
+2.  Copy `.env.example` to `.env`.
+3.  Fill in your `DATABASE_URL` (PostgreSQL connection string), `JWT_SECRET`, and other variables.
 
 ### Step 3: Database Initialization
 ```bash
 cd backend
 npx prisma generate
 npx prisma db push
-npm run seed
+npm run db:seed
 ```
 
 ### Step 4: Run Locally

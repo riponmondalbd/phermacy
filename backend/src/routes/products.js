@@ -99,7 +99,7 @@ router.get('/search/pos', authenticate, asyncHandler(async (req, res) => {
 }));
 
 // POST /api/products
-router.post('/', authenticate, authorize('ADMIN', 'MANAGER'), [
+router.post('/', authenticate, authorize('ADMIN', 'MANAGER'), auditLog('CREATE', 'Product'), [
   body('name').notEmpty().trim(),
   body('salePrice').isFloat({ min: 0 }),
   body('unit').isIn(['piece', 'strip', 'box'])

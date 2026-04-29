@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { authenticate } = require('../middleware/auth');
 const { asyncHandler } = require('../middleware/errorHandler');
+const { auditLog } = require('../middleware/audit');
 const prisma = require('../utils/prisma');
 
 // GET /api/cash/sessions
@@ -100,7 +101,7 @@ router.post('/sessions/:id/close', authenticate, asyncHandler(async (req, res) =
 }));
 
 // POST /api/cash/expenses
-router.post('/expenses', authenticate, asyncHandler(async (req, res) => {
+router.post('/expenses', authenticate, auditLog('CREATE', 'Expense'), asyncHandler(async (req, res) => {
   const { cashSessionId, category, amount, description } = req.body;
   if (!category || !amount) return res.status(400).json({ error: 'category and amount required' });
 
@@ -139,3 +140,4 @@ router.get('/expenses', authenticate, asyncHandler(async (req, res) => {
 }));
 
 module.exports = router;
+= router;

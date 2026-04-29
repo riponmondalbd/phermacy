@@ -47,7 +47,7 @@ router.get('/:id', authenticate, asyncHandler(async (req, res) => {
 }));
 
 // POST /api/purchases — Dynamic creation of suppliers/products
-router.post('/', authenticate, authorize('ADMIN', 'MANAGER'), asyncHandler(async (req, res) => {
+router.post('/', authenticate, authorize('ADMIN', 'MANAGER'), auditLog('CREATE', 'Purchase'), asyncHandler(async (req, res) => {
   const { 
     supplierId, // could be UUID or name string
     invoiceNo, 

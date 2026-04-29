@@ -70,7 +70,7 @@ router.get('/:id', authenticate, asyncHandler(async (req, res) => {
 }));
 
 // POST /api/sales  — FIFO batch deduction, profit calculation
-router.post('/', authenticate, [
+router.post('/', authenticate, auditLog('CREATE', 'Sale'), [
   body('items').isArray({ min: 1 }),
   body('items.*.productId').notEmpty(),
   body('items.*.batchId').notEmpty(),
@@ -188,4 +188,5 @@ router.post('/', authenticate, [
   res.status(201).json(full);
 }));
 
+module.exports = router;
 module.exports = router;

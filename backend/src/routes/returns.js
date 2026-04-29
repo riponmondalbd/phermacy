@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { authenticate } = require('../middleware/auth');
 const { asyncHandler } = require('../middleware/errorHandler');
+const { auditLog } = require('../middleware/audit');
 const prisma = require('../utils/prisma');
 
 // POST /api/returns/customer  — customer return, restores batch stock
@@ -135,7 +136,7 @@ router.get('/customer', authenticate, asyncHandler(async (req, res) => {
 }));
 
 // POST /api/returns/supplier
-router.post('/supplier', authenticate, asyncHandler(async (req, res) => {
+router.post('/supplier', authenticate, auditLog('RETURN', 'SupplierReturn'), asyncHandler(async (req, res) => {
   const { supplierId, totalAmount, reason, notes } = req.body;
   const ret = await prisma.supplierReturn.create({
     data: { supplierId, totalAmount: parseFloat(totalAmount), reason, notes }

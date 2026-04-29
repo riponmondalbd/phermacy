@@ -38,7 +38,7 @@ router.get('/:id', authenticate, asyncHandler(async (req, res) => {
 }));
 
 // POST /api/customers
-router.post('/', authenticate, asyncHandler(async (req, res) => {
+router.post('/', authenticate, auditLog('CREATE', 'Customer'), asyncHandler(async (req, res) => {
   const { name, phone, email, address } = req.body;
   if (!name) return res.status(400).json({ error: 'Name required' });
   const customer = await prisma.customer.create({ data: { name, phone, email, address } });
@@ -46,7 +46,7 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
 }));
 
 // PUT /api/customers/:id
-router.put('/:id', authenticate, asyncHandler(async (req, res) => {
+router.put('/:id', authenticate, auditLog('UPDATE', 'Customer'), asyncHandler(async (req, res) => {
   const { name, phone, email, address, isActive } = req.body;
   const customer = await prisma.customer.update({
     where: { id: req.params.id },
@@ -56,7 +56,7 @@ router.put('/:id', authenticate, asyncHandler(async (req, res) => {
 }));
 
 // POST /api/customers/:id/payments
-router.post('/:id/payments', authenticate, asyncHandler(async (req, res) => {
+router.post('/:id/payments', authenticate, auditLog('PAYMENT', 'Customer'), asyncHandler(async (req, res) => {
   const { amount, saleId, method, notes } = req.body;
   if (!amount || amount <= 0) return res.status(400).json({ error: 'Invalid amount' });
 

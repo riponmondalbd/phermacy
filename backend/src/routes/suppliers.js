@@ -40,7 +40,7 @@ router.get('/:id', authenticate, asyncHandler(async (req, res) => {
 }));
 
 // POST /api/suppliers
-router.post('/', authenticate, authorize('ADMIN', 'MANAGER'), [
+router.post('/', authenticate, authorize('ADMIN', 'MANAGER'), auditLog('CREATE', 'Supplier'), [
   body('name').notEmpty().trim()
 ], asyncHandler(async (req, res) => {
   const errors = validationResult(req);
@@ -51,7 +51,7 @@ router.post('/', authenticate, authorize('ADMIN', 'MANAGER'), [
 }));
 
 // PUT /api/suppliers/:id
-router.put('/:id', authenticate, authorize('ADMIN', 'MANAGER'), asyncHandler(async (req, res) => {
+router.put('/:id', authenticate, authorize('ADMIN', 'MANAGER'), auditLog('UPDATE', 'Supplier'), asyncHandler(async (req, res) => {
   const { name, contactName, phone, email, address, isActive } = req.body;
   const supplier = await prisma.supplier.update({
     where: { id: req.params.id },
@@ -61,7 +61,7 @@ router.put('/:id', authenticate, authorize('ADMIN', 'MANAGER'), asyncHandler(asy
 }));
 
 // POST /api/suppliers/:id/payments
-router.post('/:id/payments', authenticate, asyncHandler(async (req, res) => {
+router.post('/:id/payments', authenticate, auditLog('PAYMENT', 'Supplier'), asyncHandler(async (req, res) => {
   const { amount, purchaseId, method, notes } = req.body;
   if (!amount || amount <= 0) return res.status(400).json({ error: 'Invalid amount' });
 
