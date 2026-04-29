@@ -11,13 +11,15 @@
       "config": { "distDir": "dist" }
     }
   ],
+  "cleanUrls": true,
+  "trailingSlash": false,
   "rewrites": [
     {
-      "source": "/api/(.*)",
+      "source": "/api/:path*",
       "destination": "backend/src/server.js"
     },
     {
-      "source": "/((?!api/).*)",
+      "source": "/((?!api/|.*\\.).*)",
       "destination": "/index.html"
     }
   ]
