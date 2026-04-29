@@ -11,6 +11,7 @@
     "build-frontend": "cd frontend && npm run build",
     "start-backend": "cd backend && npm start",
     "dev": "concurrently \"npm run dev --workspace=backend\" \"npm run dev --workspace=frontend\"",
+    "build": "npm run build-frontend && cd backend && npx prisma generate",
     "vercel-build": "npm run build-frontend && cd backend && npx prisma generate"
   },
   "devDependencies": {
